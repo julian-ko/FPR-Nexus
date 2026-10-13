@@ -12,6 +12,6 @@ Requires local Codex on macOS and access to this private GitHub repo. Setup auto
 
 4. Reopen Codex, start a new chat, and enter `tvlk-ai-router status`.
 
-No manual cleanup is needed for a verified App or Shell installation. If a conflict is reported, keep the files and share the error.
+No manual cleanup is needed for a verified App or Shell installation. Recognized leftovers from a failed Shell setup are archived automatically. If a conflict is reported, keep the files and share the error.
 
 [Commands and recovery](OPERATIONS.md)

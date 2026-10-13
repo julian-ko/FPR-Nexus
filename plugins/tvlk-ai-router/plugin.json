@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "tvlk-ai-router",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Task routing, model settings, local usage review and backup recovery.",
   "extensions": {
     "com.openai": {

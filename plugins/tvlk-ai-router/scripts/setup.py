@@ -13,6 +13,7 @@ from pathlib import Path
 # This detector uses only stdlib, so waiting does not require the private environment.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from tvlk_ai_router.processes import running_clients
+from tvlk_ai_router.failed_shell import recognized_failed_shell
 
 
 def wait_for_clients():
@@ -49,10 +50,13 @@ def prepare(package, python):
         if any(p.is_symlink() for p in (path, *path.parents)):
             raise ValueError("Router installation paths must not contain symbolic links")
     state = json.loads(state_path.read_text()) if state_path.exists() else None
-    if not state and any(p.exists() for p in legacy):
+    failed_shell = not state and recognized_failed_shell()
+    if not state and any(p.exists() for p in legacy) and not failed_shell:
         raise ValueError("Old router files exist without ownership state. Request recovery before setup.")
     found = (state.get("installation_backend") or "app") if state else "none"
     print("Detected installation: " + found)
+    if failed_shell:
+        print("Detected an incomplete Shell setup. Its files will be archived after clients exit; setup will then continue.")
     if found in ("app", "shell"):
         print("Setup will verify backups, remove the old program and Skill, and keep your settings.")
     parent = home / ".local/share/tvlk-ai-router-plugin/setup"

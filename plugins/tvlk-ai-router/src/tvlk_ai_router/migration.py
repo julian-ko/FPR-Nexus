@@ -1,5 +1,6 @@
 """Cold migration of owned App/Shell installs; backups never move or disappear."""
 import contextlib
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,7 @@ from pathlib import Path
 from .config import RouterError, json_bytes, parse
 from .desktop import verify_app, request_status
 from .manager import Manager
+from .failed_shell import recognized_failed_shell
 from .storage import atomic, entry, inventory, lock, no_symlink_parents, quiet_check, recover
 
 
@@ -50,6 +52,27 @@ def migrate(runtime):
             raise RouterError("Unexpected legacy files beside a plugin installation; no files were removed", 4)
         return
     if not state:
+        if not journal_path.exists() and recognized_failed_shell():
+            shell = paths["shell-runtime"]
+            old_lock = shell.parent / ".installation.lock"
+            destination = runtime.parent / "failed-shell-runtime"
+            no_symlink_parents(old_lock)
+            no_symlink_parents(destination)
+            quiet_check(include_router=True)
+            with lock(data), os.fdopen(os.open(old_lock, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600), "w") as guard:
+                try:
+                    fcntl.flock(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    raise RouterError("A Shell installer is still running; close it before retrying", 4)
+                if not recognized_failed_shell() or destination.exists():
+                    raise RouterError("Incomplete Shell setup changed or its archive already exists; no files were moved", 4)
+                quiet_check(include_router=True)
+                # Atomic move preserves the entire failed bootstrap, including its Python environment.
+                shell.rename(destination)
+                from .progress import finish_progress
+                finish_progress()
+                print("Incomplete Shell setup archived at " + str(destination), flush=True)
+            return
         if journal_path.exists() or any(p.exists() for p in paths.values()):
             raise RouterError("Legacy files have no ownership state. Keep them and request recovery before setup", 4)
         return

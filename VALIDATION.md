@@ -1,10 +1,11 @@
 # Validation
 
-Version 1.0.3 · 2026-10-13 · macOS Apple Silicon · Python 3.12.14
+Version 1.0.4 · 2026-10-13 · macOS Apple Silicon · Python 3.12.14
 
 ## Verified
 
-- 97 automated tests pass. Python discovery tests cover skipping an old default interpreter, reusing an existing runtime, explicit invalid selections, paths with spaces, setup preparation and missing arguments. Terminal progress checks cover updates on one line, clearing old text, preventing wrapping, readable redirected logs and clean result/error output. The retained tests verify that active clients still block configuration writes.
+- 105 automated tests pass. Eight new checks cover failed Shell detection, read-only preparation, lossless archival, fresh installation, unknown history, edited files, symlinks, client/installer locks, interrupted moves and archive collisions. The retained tests cover Python discovery, terminal progress and client checks before configuration writes.
+- Shell 0.4.1/0.4.2 bootstrap leftovers are accepted only with the exact ownership marker and known remaining wrapper hashes, no installed source, and no saved configuration, backups, transactions or native router markers. The whole runtime is renamed to a recovery archive after the cold-client check and under both router and Shell installer locks. No old executable runs and no backup is deleted.
 - On the development host, the default Python is 3.9.6; automatic discovery selects the existing router interpreter. Codex's bundled Python 3.12.14 also passed a real temporary venv creation and offline tomlkit installation. No live user configuration was changed.
 - Terminal setup reuses one progress line across byte-processing stages. Percentages describe the current stage. Redirected output keeps plain log lines; native-launcher JSON progress events remain unchanged.
 - The independent setup window waits for two consecutive clear process scans, then starts installation automatically. It shares client detection with the write guard; the installer still checks clients before writing. Waiting does not initialize the private environment or change router configuration.

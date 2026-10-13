@@ -11,22 +11,26 @@ import tempfile
 import venv
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from tvlk_ai_router.failed_shell import recognized_failed_shell
+
 
 def preflight(root):
     user_home = Path.home()
     state_path = user_home / ".local/share/tvlk-ai-router/state.json"
     state = json.loads(state_path.read_text()) if state_path.exists() else None
+    failed_shell = not state and recognized_failed_shell()
     marker = root / "shell-installation.json"
     owned = not marker.is_symlink() and marker.is_file() and json.loads(marker.read_text()) == {"runtime": str(root), "distribution": "plugin"}
     if not state and state_path.parent.exists():
         remaining = list(state_path.parent.iterdir())
-        safe_retry = owned and all(p.name == "lock" and not p.is_symlink() and p.is_file() and p.stat().st_size == 0 for p in remaining)
+        safe_retry = (owned or failed_shell) and all(p.name == "lock" and not p.is_symlink() and p.is_file() and p.stat().st_size == 0 for p in remaining)
         if remaining and not safe_retry:
             raise ValueError("Router data exists without plugin ownership. Stop before changing its backups or pending transactions.")
     legacy_paths = [user_home / "Applications/TVLK-OpenAI-Router.app", user_home / ".agents/skills/tvlk-ai-router", user_home / ".local/share/tvlk-ai-router-shell/runtime"]
     if state and (state.get("installation_backend") not in (None, "shell", "plugin") or state.get("installation_backend") == "plugin" and state.get("shell_runtime") != str(root)):
         raise ValueError("An unrecognized router installation owns this configuration.")
-    if not state and any(p.exists() or p.is_symlink() for p in legacy_paths):
+    if not state and any(p.exists() or p.is_symlink() for p in legacy_paths) and not failed_shell:
         raise ValueError("Legacy router files have no ownership state. Request recovery before setup; no files were removed.")
     marker = root / "shell-installation.json"
     if root.exists() and (not marker.is_file() or json.loads(marker.read_text()).get("runtime") != str(root)):
