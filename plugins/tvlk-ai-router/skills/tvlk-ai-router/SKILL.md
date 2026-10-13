@@ -1,0 +1,30 @@
+---
+name: tvlk-ai-router
+description: Set up and manage the TVLK router plugin in local Codex. Use for router setup, help, configuration, usage review, enable, disable, backups and restore. Ordinary writing and coding do not trigger this management skill.
+---
+
+# TVLK router plugin
+
+Resolve the plugin root from this loaded skill's absolute path: it is two directories above the `skills/tvlk-ai-router` directory. Invoke `bash "<absolute-plugin-root>/scripts/chat.sh" <arguments>` with local execution tools, substituting the resolved path. Do not assume `PLUGIN_ROOT` is exported in a normal shell tool; that variable is provided to plugin hooks.
+
+| Request | Arguments |
+|---|---|
+| setup or runtime upgrade | `setup` |
+| help | `help` |
+| configuration | `show` |
+| status | `status` |
+| usage | `review` / `review 30d` / `review since-install` |
+| backups | `backups` |
+| apply / enable / disable | `request apply` / `request enable` / `request disable` |
+| restore selected backup | `request restore --backup-id <id>` |
+| cancel pending change | `cancel` |
+
+Setup prints a Terminal command. Give the exact command to the user; they must quit Codex/ChatGPT and run it themselves. Setup checks existing App/Shell ownership and never migrates them automatically. Read-only commands run directly. Changes return a pending request and a quoted Terminal command; pending means configuration has not changed. Do not execute writes from chat, force-quit apps, edit state/request files or bypass process checks. After reopening, check status and start a new chat.
+
+For model changes, show the configuration path and edit only requested router.toml fields before queuing apply. Preserve other settings. Do not edit generated native roles. For restore, require an explicit backup ID; list choices if missing. Default to config scope. Only append `--scope full` for an explicit full-history restore; it rolls back worktrees and chat history.
+
+Review reports local recorded models and role categories without prompts. Turns are not questions or API calls. Keep unknown/partial data and observed-token shares explicit; costs and account quota are outside scope.
+
+Automatic routing is injected by enabled plugin hooks only after successful setup. Native subagents receive no further routing context. Disabling/removing the plugin stops new hook calls; it does not undo installed model/agent configuration or instructions already in an existing chat. For recovery without the plugin, invoke the durable local program under `~/.local/share/tvlk-ai-router-plugin/runtime/tvlk-ai-router` and stage a restore request, then use its returned manage.sh command.
+
+This requires local file/tool access. Report unavailable tools honestly. Ordinary ChatGPT cloud cannot change this local configuration.

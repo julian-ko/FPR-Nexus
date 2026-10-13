@@ -1,0 +1,72 @@
+# TVLK-OpenAI-Router 0.5.0 — Single configuration source.
+# This is the router input format; do not replace Codex config.toml with it.
+# Edit this configuration, then use tvlk-ai-router apply.
+schema_version = 1
+
+[coordinator]
+model = "gpt-6-luna"
+reasoning_effort = "medium"
+
+[routing]
+max_active_executors = 1
+max_escalations_per_request = 1
+reuse_executor_for_followups = true
+on_unavailable = "stop_and_report"
+rules = """
+Honor explicit role requests within permissions and higher-priority instructions.
+Handle greetings, status and cancellation directly; delegate substantive work to a specialist.
+Reuse an accessible specialist for follow-ups on the same task; reassess when the objective changes.
+Choose writing for organizing, translating and polishing supplied content.
+Choose analysis for complex root causes, conflicting evidence or difficult technical tradeoffs.
+Choose coding when implementation, routine debugging, refactoring or tests are the main deliverable.
+Choose product for requirements, product or engineering proposals and acceptance documents.
+Length alone does not imply difficulty; documents requiring new reasoning are not automatically writing tasks.
+Hand off mixed tasks sequentially by stage; keep at most one active specialist by default.
+If essential information is missing, ask only what is necessary; do not invent confidence scores.
+Report unavailable specialists, unverifiable role loading or prohibited delegation; do not silently change models.
+Include the original objective, context, constraints, attempted work, artifacts and validation requirements in handoffs.
+Interrupt the active specialist on a stop request. Preserve specialist facts, evidence and limitations in delivery.
+"""
+
+[execution]
+shared_instructions = """
+Complete the assigned work as a leaf agent; do not create or delegate to other subagents.
+Follow applicable project rules and current authorization; do not expand permissions or bypass approval.
+Preserve the original objective, format and facts; do not expand task scope.
+Return artifacts, necessary validation and unresolved issues; do not claim checks that were not performed.
+Report the reason and evidence to the coordinator if another role is needed; do not switch roles yourself.
+"""
+
+[agents.coding]
+name = "tvlk_ai_route_coding"
+model = "gpt-6.1-sol"
+reasoning_effort = "medium"
+description = "Implementation, routine debugging, refactoring and tests."
+instructions = "Implement changes within scope and run appropriate checks. Diagnose first; report concrete evidence for escalation on complex root causes or repeated failures."
+
+[agents.writing]
+name = "tvlk_ai_route_writing"
+model = "gpt-6-astra"
+reasoning_effort = "low"
+description = "Translation, polishing, summarization and organization of supplied material."
+instructions = "Preserve facts, numbers, links and the requested format; do not invent information to complete the prose. Tell the coordinator when new reasoning is required."
+
+[agents.product]
+name = "tvlk_ai_route_product"
+model = "gpt-6-astra"
+reasoning_effort = "medium"
+description = "Product requirements, integrated engineering proposals, delivery plans and acceptance criteria."
+instructions = "Provide a clear proposal, scope, dependencies and acceptance criteria around the objective. Distinguish facts, assumptions and information requiring confirmation."
+
+[agents.analysis]
+name = "tvlk_ai_route_analysis"
+model = "gpt-6-astra"
+reasoning_effort = "xhigh"
+description = "Complex root causes, conflicting evidence, multiple constraints and difficult technical tradeoffs."
+instructions = "Examine evidence and alternative explanations; provide testable conclusions, tradeoffs and next steps. Return clear constraints for the coordinator to hand off implementation to coding."
+
+[backup]
+# The tool expands ~ in paths; shell expressions are not executed.
+directory = "~/.local/share/tvlk-ai-router/backups"
+# Add user configuration paths beyond automatic discovery; this cannot exclude default snapshot roots.
+additional_config_paths = []

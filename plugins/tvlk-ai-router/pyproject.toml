@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tvlk-ai-router"
+version = "0.5.0"
+description = "TVLK-OpenAI-Router Shell: independent source configuration and backup manager"
+requires-python = ">=3.11"
+dependencies = ["tomlkit>=0.13.3,<0.14"]
+classifiers = ["Programming Language :: Python :: 3", "Operating System :: POSIX"]
+
+[project.scripts]
+tvlk-ai-router = "tvlk_ai_router.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tvlk_ai_router = ["data/*"]

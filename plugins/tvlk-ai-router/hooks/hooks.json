@@ -1,0 +1,6 @@
+{
+  "hooks": {
+    "SessionStart": [{"hooks": [{"type": "command", "command": "bash \"${PLUGIN_ROOT}/hooks/router.sh\"", "statusMessage": "Loading router rules"}]}],
+    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "bash \"${PLUGIN_ROOT}/hooks/router.sh\"", "statusMessage": "Checking router rules"}]}]
+  }
+}
