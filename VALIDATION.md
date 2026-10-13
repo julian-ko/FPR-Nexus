@@ -17,6 +17,7 @@ This independent plugin distribution reuses the 0.4.2 Shell source, backup engin
 - Pending changes and restore use the durable runtime outside the plugin cache and retain plugin ownership.
 - All five Bash scripts pass syntax checks. The management skill passes the official skill-creator validator.
 - The actual Codex CLI added the local marketplace and installed `tvlk-ai-router@tvlk-ai-router` 0.5.0 in a temporary HOME and CODEX_HOME. The installed cache contained the skill, hook manifest, and source, and its isolated user configuration enabled the plugin.
+- After publication, the same CLI successfully added `https://github.com/julian-ko/TVLK-OpenAI-Router` and installed version 0.5.0 into another temporary HOME and CODEX_HOME. The test used the owner's existing SSH authentication through a process-local Git URL rewrite. The installed setup command returned its handoff without creating router state. Teammates still need their own repository access and authentication.
 - Documentation links were checked. A targeted text scan found no personal absolute paths or credential-like literals; this is not a full security audit.
 - The previous 0.4.1 App, Team Pack, and Shell archives and the 0.4.2 Shell archive retained their recorded SHA-256 hashes.
 - An independent targeted source review found no publication blockers. Its minor finding about creating an empty AGENTS file was fixed and covered by the final regression test.
