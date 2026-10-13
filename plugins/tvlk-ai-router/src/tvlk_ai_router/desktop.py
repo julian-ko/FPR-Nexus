@@ -239,6 +239,7 @@ def dispatch(args):
         CHAT_HELP["title"] = "TVLK-OpenAI-Router · Plugin chat management"
         CHAT_HELP["usage"] = "Read-only commands run in local Codex chat. Changes require a Terminal command after quitting Codex."
         CHAT_HELP["changes"] = "A change returns a quoted bash manage.sh command. Quit Codex/ChatGPT, then run it in Terminal. Pending means no configuration change has been applied."
+        CHAT_HELP["setup"] = "Enter tvlk-ai-router setup to open the setup window. It checks and migrates old installations before applying plugin settings."
     if os.environ.get("TVLK_ROUTER_SHELL_ROOT") and args.command == "desktop" and args.operation == "install":
         raise RouterError("Use bash install.sh for the source package", 4)
     if args.command == "chat" and args.operation == "help":
@@ -258,7 +259,7 @@ def dispatch(args):
         from .usage import review
         return review(m.home, m.state, args.period)
     if args.operation == "status":
-        return request_status(m)
+        return {**m.show(), "pending_request": request_status(m)}
     if args.operation == "backups":
         return m.backups()
     if args.operation == "cancel":

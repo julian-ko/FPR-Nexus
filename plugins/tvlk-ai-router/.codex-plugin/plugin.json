@@ -1,7 +1,8 @@
 {
   "name": "tvlk-ai-router",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "Task routing, local model usage and safe native configuration recovery.",
   "skills": "./skills",
-  "hooks": "./hooks/hooks.json"
+  "hooks": "./hooks/hooks.json",
+  "extensions": {"com.openai": {"onboardingSkill": "./skills/setup/SKILL.md"}}
 }

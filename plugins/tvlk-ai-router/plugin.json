@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "tvlk-ai-router",
+  "version": "1.0.0",
+  "description": "Task routing, model settings, local usage review and backup recovery.",
+  "extensions": {
+    "com.openai": {
+      "hooks": "./hooks/hooks.json",
+      "onboardingSkill": "./skills/setup/SKILL.md",
+      "interface": {
+        "displayName": "TVLK-OpenAI-Router",
+        "shortDescription": "Route tasks and manage model settings",
+        "defaultPrompt": ["Set up TVLK-OpenAI-Router and replace my previous router installation safely."]
+      }
+    }
+  }
+}

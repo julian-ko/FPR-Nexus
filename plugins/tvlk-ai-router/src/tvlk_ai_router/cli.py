@@ -119,6 +119,9 @@ def main(argv=None):
             from .desktop import dispatch
             display(dispatch(args), machine=True)
             return 0
+        if args.command == "shell-install" and os.environ.get("TVLK_ROUTER_BACKEND") == "plugin":
+            from .migration import migrate
+            migrate(os.environ["TVLK_ROUTER_SHELL_ROOT"])
         m = Manager(args.codex_home, args.config_dir, args.data_dir, args.agents_home)
         if args.command == "review":
             from .usage import review

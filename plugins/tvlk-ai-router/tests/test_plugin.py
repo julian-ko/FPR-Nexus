@@ -2,6 +2,7 @@ import importlib.util
 import json
 import os
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -124,11 +125,13 @@ class PluginTests(unittest.TestCase):
 
     def test_chat_launcher_setup_and_version_guard(self):
         launcher = PACKAGE / "scripts/chat.sh"
-        env = {**os.environ, "HOME": str(self.fixture.root)}
+        env = {**os.environ, "HOME": str(self.fixture.root), "PATH": str(Path(sys.executable).parent) + os.pathsep + os.environ.get("PATH", "")}
         setup = subprocess.run(["bash", str(launcher), "setup"], capture_output=True, text=True, env=env)
         self.assertEqual(setup.returncode, 0)
-        self.assertIn("quit codex/chatgpt", setup.stdout.lower())
-        self.assertIn("--python", setup.stdout)
+        self.assertIn("Setup-Router.command", setup.stdout)
+        prepared = Path(setup.stdout.split("Setup file: ", 1)[1].strip())
+        self.assertTrue(prepared.exists())
+        self.assertIn("--python", prepared.read_text())
         self.runtime.mkdir(parents=True)
         engine = self.runtime / "tvlk-ai-router"
         engine.write_text("#!/bin/bash\necho 'TVLK-OpenAI-Router 0.4.2'\n")

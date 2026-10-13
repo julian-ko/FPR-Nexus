@@ -23,14 +23,15 @@ def preflight(root):
         safe_retry = owned and all(p.name == "lock" and not p.is_symlink() and p.is_file() and p.stat().st_size == 0 for p in remaining)
         if remaining and not safe_retry:
             raise ValueError("Router data exists without plugin ownership. Stop before changing its backups or pending transactions.")
-    if (user_home / "Applications/TVLK-OpenAI-Router.app").exists() or state and (state.get("installation_backend") != "plugin" or state.get("shell_runtime") != str(root)):
-        raise ValueError("An App, Shell or other router installation already exists. This plugin cannot replace it; automatic migration is not supported.")
-    if not state and (user_home / ".agents/skills/tvlk-ai-router").exists():
-        raise ValueError("A standalone router management Skill already exists; automatic migration is not supported. No files were changed.")
+    legacy_paths = [user_home / "Applications/TVLK-OpenAI-Router.app", user_home / ".agents/skills/tvlk-ai-router", user_home / ".local/share/tvlk-ai-router-shell/runtime"]
+    if state and (state.get("installation_backend") not in (None, "shell", "plugin") or state.get("installation_backend") == "plugin" and state.get("shell_runtime") != str(root)):
+        raise ValueError("An unrecognized router installation owns this configuration.")
+    if not state and any(p.exists() or p.is_symlink() for p in legacy_paths):
+        raise ValueError("Legacy router files have no ownership state. Request recovery before setup; no files were removed.")
     marker = root / "shell-installation.json"
     if root.exists() and (not marker.is_file() or json.loads(marker.read_text()).get("runtime") != str(root)):
         raise ValueError("The runtime directory is not owned by this plugin; no files were changed.")
-    for path in (root, state_path):
+    for path in (root, state_path, *legacy_paths):
         if any(p.is_symlink() for p in (path, *path.parents)):
             raise ValueError("Installation paths must not contain symbolic links.")
     if any((root / name).is_symlink() for name in ("shell-installation.json", "src", "src.old", ".venv", "runner.py", "tvlk-ai-router", "manage.sh")) or any(p.is_symlink() for p in (root / "src").rglob("*")):
@@ -90,7 +91,8 @@ def _install(package, root, config=None):
             for name in ("runner.py", "tvlk-ai-router", "manage.sh"):
                 shutil.copy2(package / "scripts" / name, root / name)
             (root / "tvlk-ai-router").chmod(0o700)
-            subprocess.run([str(python), "-I", str(root / "runner.py"), "shell-install", *(["--config", str(Path(config).resolve())] if config else [])], check=True)
+            subprocess.run([str(python), "-I", str(root / "runner.py"), "shell-install", *(["--config", str(Path(config).resolve())] if config else [])], check=True,
+                           env={**os.environ, "TVLK_ROUTER_PROGRESS": "text"})
         except BaseException:
             if new_moved:
                 shutil.rmtree(root / "src")

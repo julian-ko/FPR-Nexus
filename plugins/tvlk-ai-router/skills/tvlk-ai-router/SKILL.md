@@ -9,9 +9,10 @@ Resolve the plugin root from this loaded skill's absolute path: it is two direct
 
 | Request | Arguments |
 |---|---|
-| setup or runtime upgrade | `setup` |
+| setup or runtime upgrade | `setup --open` |
 | help | `help` |
 | configuration | `show` |
+| validate / export configuration | `config validate` / `config example` |
 | status | `status` |
 | usage | `review` / `review 30d` / `review since-install` |
 | backups | `backups` |
@@ -19,7 +20,9 @@ Resolve the plugin root from this loaded skill's absolute path: it is two direct
 | restore selected backup | `request restore --backup-id <id>` |
 | cancel pending change | `cancel` |
 
-Setup prints a Terminal command. Give the exact command to the user; they must quit Codex/ChatGPT and run it themselves. Setup checks existing App/Shell ownership and never migrates them automatically. Read-only commands run directly. Changes return a pending request and a quoted Terminal command; pending means configuration has not changed. Do not execute writes from chat, force-quit apps, edit state/request files or bypass process checks. After reopening, check status and start a new chat.
+Setup detects old installations and opens a setup window. Tell the user to quit Codex/ChatGPT, press Enter there, and reopen after completion. Setup verifies and migrates owned App/Shell installations, preserving user settings and historical backups. If the window cannot open, link the returned Setup-Router.command. Read-only commands run directly. Other changes return a pending request and a quoted Terminal command; pending means configuration has not changed. Do not execute cold configuration writes from chat, force-quit apps, edit state/request files or bypass process checks. After reopening, check status and start a new chat.
+
+For uninstall, first complete disable (or the explicitly selected restore) and verify it. Then use the client's plugin removal capability when the user has requested removal. Keep backups and the durable recovery runtime. Removing plugin files alone does not undo model settings.
 
 For model changes, show the configuration path and edit only requested router.toml fields before queuing apply. Preserve other settings. Do not edit generated native roles. For restore, require an explicit backup ID; list choices if missing. Default to config scope. Only append `--scope full` for an explicit full-history restore; it rolls back worktrees and chat history.
 

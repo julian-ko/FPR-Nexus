@@ -1,31 +1,27 @@
 # Validation
 
-Version 0.5.0 · 2026-10-13 · Asia/Singapore
+Version 1.0.0 · 2026-10-13 · macOS Apple Silicon · Python 3.12.14
 
-Host: macOS, Apple Silicon. Python 3.12.14. No installation or configuration change was made to the user's live Codex Home.
+## Verified
 
-## Scope
-
-This independent plugin distribution reuses the 0.4.2 Shell source, backup engine, and offline dependency. Original App and Shell distributions and the user's installed configuration must remain unchanged.
-
-## Verified checks
-
-- 71 automated tests passed, including 64 retained/adapted router and Shell regressions and 7 plugin tests. A coordinator run passed the initial 70 tests; the final 71-test run also covers the instruction-file fix identified in review.
-- Plugin setup and repeat setup in isolated user directories preserve the original baseline, installation time, edited model settings, and existing global AGENTS text. An absent AGENTS file stays absent through setup, apply, disable, enable, and restore. The plugin does not install a second shared management skill.
-- Existing Shell ownership is refused by the plugin installer; existing App ownership guards remain covered by the retained suite.
-- Hook checks cover valid root sessions, native and generic subagents, missing identity, disabled router state, configuration drift, and a runtime/plugin version mismatch. A real isolated hook subprocess produced the expected UserPromptSubmit JSON and no output for missing identity.
-- Pending changes and restore use the durable runtime outside the plugin cache and retain plugin ownership.
-- All five Bash scripts pass syntax checks. The management skill passes the official skill-creator validator.
-- The actual Codex CLI added the local marketplace and installed `tvlk-ai-router@tvlk-ai-router` 0.5.0 in a temporary HOME and CODEX_HOME. The installed cache contained the skill, hook manifest, and source, and its isolated user configuration enabled the plugin.
-- After publication, the same CLI successfully added `https://github.com/julian-ko/TVLK-OpenAI-Router` and installed version 0.5.0 into another temporary HOME and CODEX_HOME. The test used the owner's existing SSH authentication through a process-local Git URL rewrite. The installed setup command returned its handoff without creating router state. Teammates still need their own repository access and authentication.
-- Documentation links were checked. A targeted text scan found no personal absolute paths or credential-like literals; this is not a full security audit.
-- The previous 0.4.1 App, Team Pack, and Shell archives and the 0.4.2 Shell archive retained their recorded SHA-256 hashes.
-- An independent targeted source review found no publication blockers. Its minor finding about creating an empty AGENTS file was fixed and covered by the final regression test.
+- 80 automated tests pass: the retained routing, storage, desktop, Shell, usage and plugin checks, plus nine migration/setup tests.
+- New setup and repeat setup preserve user settings, baseline backups and install time. Global instructions remain unchanged by plugin setup; no duplicate shared Skill is created.
+- App and Shell migration fixtures cover enabled, disabled and restored states, missing configuration after baseline restore, edited Skills, corrupt backups, active clients, interrupted moves and changed archived files.
+- Old programs are moved to the recovery archive. Router configuration and historical backup bytes remain in place. Migration retries finish remaining moves; ambiguous ownership stops before removal.
+- Restoring an active App/Shell snapshot keeps plugin ownership and removes the legacy routing block. It does not recreate the old shared Skill. Restoring the original baseline and then enabling remains supported.
+- A separate compatibility smoke check used the actual 0.4.2 Shell source to generate an installation in a temporary user directory. Migration to 1.0.0 preserved its original baseline, removed its old runtime and shared Skill paths, and left no managed-file drift.
+- The actual Codex CLI installed the local marketplace plugin as version 1.0.0 in an isolated HOME/CODEX_HOME. Both manifests, the packaged onboarding Skill and the hook files were present. This did not create router configuration before setup.
+- The prepared setup file passes Bash syntax validation, survives independently of the plugin cache, preserves CODEX_HOME and does not mutate router state during preparation.
+- All four Bash scripts and the shell launcher pass syntax validation. Both Skills pass the official skill-creator validator.
+- Hook tests cover root session metadata, subagent exclusion, disabled routing, managed-file drift and version mismatch. A real isolated hook subprocess returned the expected JSON.
+- Usage tests retain cumulative-event deduplication, inherited-token handling, model switches, cached/reasoning accounting and partial-data reporting.
 
 ## Limits
 
-Successful setup tests use temporary user directories and mock the cold-client gate. They do not prove a successful install on a teammate's computer. Plugin trust, model availability, and organizational policies must be checked in the target client. Local usage review is not a billing integration.
+Migration tests use temporary user directories, fixture model availability and a mocked cold-client gate. The App migration fixture mocks signature validation; it does not exercise a real installed App bundle. The normal process check and App verification code remain enabled in shipped setup.
 
-The native CLI installation check proves marketplace discovery, cache installation, and enabled configuration. It does not prove hook trust or end-to-end model delegation in the desktop UI. Hooks intentionally stay silent when valid root-session metadata is unavailable. Disabling a plugin stops future hook loading at the host level; the already-written model and agent settings require an explicit router disable or restore operation.
+The CLI check proves marketplace discovery and cache installation. It does not prove the desktop Set up button, Terminal opening, hook trust or end-to-end model delegation on a teammate's computer. Those require the target client and account.
 
-The first plugin release refuses automatic migration from App or Shell installations. It requires an approved Python 3.11+ interpreter; its private environment still depends on that interpreter. Windows, Linux, Intel Macs, and other client versions were not tested.
+Setup needs an approved Python 3.11+ interpreter. The private environment depends on that interpreter. Other operating systems, Intel Macs and organizational policy combinations were not tested.
+
+The plugin host installs plugin files before onboarding. Legacy removal happens during setup, before native plugin settings are applied. Removing the plugin alone does not undo model configuration; use disable or restore first. Local usage review is not billing or account-quota measurement.

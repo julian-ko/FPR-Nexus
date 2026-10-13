@@ -1,12 +1,12 @@
 # TVLK-OpenAI-Router
 
-Version 0.5.0 · Personal Codex plugin · macOS
+Version 1.0.0 · Personal Codex plugin · macOS
 
 ## What
 
-One plugin helps your main assistant choose a specialist for each task. You keep one model configuration file, local backups, and chat commands for help, settings, and usage review.
+A self-contained plugin for task routing, model settings, local usage review and backup recovery. The plugin includes its own setup and recovery program; an older App or Shell package is not required.
 
-| Role | Model | Reasoning |
+| Task | Model | Reasoning |
 | --- | --- | --- |
 | Main assistant | GPT-6 Luna | medium |
 | Coding | GPT-6.1 Sol | medium |
@@ -14,66 +14,45 @@ One plugin helps your main assistant choose a specialist for each task. You keep
 | Product and engineering plans | GPT-6 Astra | medium |
 | Hard analysis | GPT-6 Astra | xhigh |
 
-These are team defaults. They are not a claim that one setting is best for every task. Your account must have access to the selected models.
+These are team defaults, not official best settings for every task. Your account must support them. Existing users keep their own model choices.
 
 ## Why
 
-- Share one GitHub link with the team instead of sending a new App archive for each release.
-- Keep model settings in one file and reuse the existing backup and restore engine.
-- Let the plugin load short routing rules for new chats. The main model still decides which specialist to use.
+- One GitHub link for the team. No separate App package.
+- One editable file for models, reasoning and routing rules.
+- Verified backups before changes, with disable and restore commands.
+- A setup check replaces the old router without losing settings or backups.
 
-The main assistant reads context, handles management commands, and reviews specialist results. It is not a zero-cost classifier. Plugin packaging does not by itself reduce token use.
+The main assistant reads the request and delegates work. It also reads context and reviews the result, so its token use is more than a short classification call.
 
 ## How
 
-Repository: https://github.com/julian-ko/TVLK-OpenAI-Router
+[Install in four steps](INSTALL.md).
 
-This repository is private. Each teammate needs read access and GitHub authentication on their own computer. A repository link does not grant access.
+```text
+Setup → Check old version → Verify backups → Remove old program → Enable plugin
 
-In a local Codex chat with command execution, ask:
-
-> Install the tvlk-ai-router plugin from https://github.com/julian-ko/TVLK-OpenAI-Router, then guide me through tvlk-ai-router setup. Preserve my existing settings and backups.
-
-The plugin source can also be added directly:
-
-```sh
-codex plugin marketplace add https://github.com/julian-ko/TVLK-OpenAI-Router
-codex plugin add tvlk-ai-router@tvlk-ai-router
+Request → Luna → Coding / Writing / Product / Analysis → Result
 ```
 
-Restart the client and start a new chat. Review and trust the plugin hooks through the client when prompted. Then enter `tvlk-ai-router setup`.
+Setup runs before native model configuration is applied. The host installs plugin files first; it does not provide a pre-install uninstall hook. Hooks only start routing after successful setup and user trust. A restart is needed for new model settings.
 
-**Installing the plugin and applying the model configuration are separate steps.** First-time setup requires an approved Python 3.11+ with `venv` and `ensurepip`. Setup returns a local Terminal command; quit Codex/ChatGPT before running it, then reopen the client. Python is not downloaded by this package. The bundled dependency is installed offline.
-
-Read [INSTALL.md](INSTALL.md) before setup, updates, or removal. See [VALIDATION.md](VALIDATION.md) for what has actually been tested.
-
-## Daily commands
-
-Enter these in local Codex chat:
+Enter these commands in a local Codex chat:
 
 ```text
 tvlk-ai-router help
 tvlk-ai-router config show
 tvlk-ai-router status
-tvlk-ai-router review since-install
-tvlk-ai-router backup list
+tvlk-ai-router apply
 tvlk-ai-router disable
 tvlk-ai-router enable
+tvlk-ai-router backup list
 tvlk-ai-router restore <backup-id>
+tvlk-ai-router review since-install
 ```
 
-Read-only commands run in chat. Configuration changes use a pending request and a Terminal command after closing the client. They do not force-quit apps.
+Usage review reads retained local sessions, including non-router sessions. Cached input is included in input; reasoning is included in output. These are local usage records, not bills or account quotas. Missing data and unknown task types remain visible.
 
-Usage review reads retained local and archived sessions, including non-router sessions. Cached input is part of input; reasoning output is part of output. Counts are not bills or account quotas. Unknown roles and missing data remain visible.
+The repository is private: teammates need read access and GitHub authentication. This plugin requires local tools; ordinary ChatGPT cloud chats cannot control local model settings.
 
-## Existing users
-
-The App and Shell editions remain separate. This release refuses to overwrite an App-managed or Shell-managed installation. Keep using that edition until a migration path is available. Do not delete ownership records or backups to force setup.
-
-Turning off the plugin stops future hook loading; it does not restore the default model or remove installed agent configuration. Existing chats can retain earlier instructions. Use the router's restore workflow before removing the plugin if you want to undo configuration changes.
-
-## Source
-
-The plugin lives in `plugins/tvlk-ai-router`. The marketplace catalog is `.agents/plugins/marketplace.json`. User configuration, runtime state, and backups live outside the plugin cache so a plugin refresh does not replace them.
-
-No API proxy, hosted service, or external usage collector is included. See [third-party notices](plugins/tvlk-ai-router/THIRD-PARTY.md) for the bundled dependency.
+[Commands, updates and recovery](OPERATIONS.md) · [Validation](VALIDATION.md) · [Third-party notices](plugins/tvlk-ai-router/THIRD-PARTY.md)

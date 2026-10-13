@@ -6,7 +6,16 @@ import time
 
 
 def progress(stage, message, completed=None, total=None, unit=None):
-    if os.environ.get("TVLK_ROUTER_PROGRESS") != "1":
+    mode = os.environ.get("TVLK_ROUTER_PROGRESS")
+    if mode not in ("1", "text"):
+        return
+    if mode == "text":
+        if total and completed is not None:
+            fraction = min(1, completed / total)
+            bar = "#" * int(fraction * 20)
+            print(f"[{bar:<20}] {fraction:.0%} {message} ({completed}/{total} {unit or ''})", file=sys.stderr, flush=True)
+        else:
+            print(message, file=sys.stderr, flush=True)
         return
     value = {"stage": stage, "message": message}
     if completed is not None:
@@ -23,7 +32,7 @@ class ByteProgress:
     def __init__(self, stage, message, total=None):
         self.stage, self.message, self.total = stage, message, total
         self.completed = 0
-        self.enabled = os.environ.get("TVLK_ROUTER_PROGRESS") == "1"
+        self.enabled = os.environ.get("TVLK_ROUTER_PROGRESS") in ("1", "text")
         self.last = time.monotonic()
         self.emit()
 

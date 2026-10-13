@@ -55,7 +55,7 @@ class Manager:
         shell_root = os.environ.get("TVLK_ROUTER_SHELL_ROOT")
         backend = os.environ.get("TVLK_ROUTER_BACKEND", "shell")
         if shell_root and self.state and (self.state.get("installation_backend") != backend or self.state.get("shell_runtime") != shell_root):
-            raise RouterError("This router is owned by another installation. The plugin cannot replace an App or Shell installation", 4)
+            raise RouterError("This router is owned by another installation. Run plugin setup to migrate an App or Shell installation", 4)
         if self.state:
             if self.state.get("schema") != 1:
                 raise RouterError("Unsupported state schema", 4)
@@ -329,6 +329,11 @@ class Manager:
         elif action in ("install", "enable") and not file and not self.source.exists():
             from importlib.resources import files
             raw = files("tvlk_ai_router").joinpath("data/router.example.toml").read_bytes()
+            if self.state:
+                import tomlkit
+                document = tomlkit.parse(raw.decode())
+                document["backup"]["directory"] = str(self.store())
+                raw = tomlkit.dumps(document).encode()
             d = parse(raw)
         else:
             raw, d = self.config(file)
@@ -412,6 +417,9 @@ class Manager:
         for name in set(now) | set(target):
             path = Path(name)
             a, b = now.get(name, {"type": "missing"}), target.get(name, {"type": "missing"})
+            if self.state and self.state.get("installation_backend") == "plugin" and (path == self.skill_dir or path.is_relative_to(self.skill_dir)):
+                preserved.append(name + " (legacy Skill is not restored into a plugin installation)")
+                continue
             # The management entry is part of the recovery tool, like the app and
             # backup store. Keep it available after disabling or restoring baseline.
             if self.state and self.state.get("management_hashes"):
@@ -442,6 +450,18 @@ class Manager:
                 preserved.append(name + " (only supported preference fields restored)")
             else:
                 edits[path] = None if b["type"] == "missing" else (b, blobs)
+        # Historical App/Shell snapshots remain usable without reviving duplicate routing.
+        legacy_state = m.get("router_state")
+        plugin_restore = self.state and self.state.get("installation_backend") == "plugin"
+        if plugin_restore and legacy_state and legacy_state.get("installation_backend") != "plugin":
+            instruction = Path(legacy_state["instruction_path"])
+            saved = target.get(str(instruction), {})
+            if saved.get("type") == "file":
+                clean = strip_block((blobs / saved["sha256"]).read_text())[0].encode()
+                if clean != read(instruction):
+                    edits[instruction] = clean
+                else:
+                    edits.pop(instruction, None)
         report = {"action": "restore", "backup_id": ident, "scope": scope, "dry_run": dry,
                   "changes": sorted(map(str, edits)), "preserved_count": len(preserved),
                   "mixed_state_policy": "Recognized preferences are merged; other mixed state is preserved. Use --scope full for complete state restore"}
@@ -463,6 +483,8 @@ class Manager:
             next_state["management_hashes"] = self.state["management_hashes"]
         if self.state and self.state.get("installation_backend") in ("shell", "plugin"):
             next_state.update(installation_backend=self.state["installation_backend"], shell_runtime=self.state["shell_runtime"])
+        if plugin_restore:
+            next_state.update(management_hashes={}, block=None, version=__version__)
         if self.state and self.state.get("installed_at"):
             next_state["installed_at"] = self.state["installed_at"]
         if getattr(self, "operation_request_id", None):
