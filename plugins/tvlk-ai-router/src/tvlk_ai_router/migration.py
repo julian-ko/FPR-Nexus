@@ -53,7 +53,7 @@ def migrate(runtime):
         if journal_path.exists() or any(p.exists() for p in paths.values()):
             raise RouterError("Legacy files have no ownership state. Keep them and request recovery before setup", 4)
         return
-    quiet_check()
+    quiet_check(include_router=True)
     if state.get("installation_backend") not in (None, "shell"):
         raise RouterError("Unsupported previous installation backend", 4)
     expected_targets = [str(Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))).expanduser().absolute()),

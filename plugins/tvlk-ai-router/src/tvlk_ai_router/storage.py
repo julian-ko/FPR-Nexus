@@ -142,7 +142,7 @@ def ensure_outside(store, roots):
             raise RouterError("Backup/state directory overlaps a snapshot root: " + str(root), 4)
 
 
-def quiet_check():
+def quiet_check(include_router=False):
     """Conservative by design: cannot determine every client's CODEX_HOME."""
     progress("check_apps", "Checking running Codex and ChatGPT processes")
     try:
@@ -155,10 +155,11 @@ def quiet_check():
         if len(fields) != 2 or fields[0] == str(os.getpid()):
             continue
         name = Path(fields[1]).name.lower()
-        if name in {"codex", "codex-cli", "codexcli", "chatgpt", "codex app"} or name.startswith(("chatgpt helper", "codex helper")):
+        old_router = include_router and "/TVLK-OpenAI-Router.app/Contents/MacOS/" in fields[1]
+        if old_router or name in {"codex", "codex-cli", "codexcli", "chatgpt", "codex app"} or name.startswith(("chatgpt helper", "codex helper")):
             blocked.append(fields[0] + ":" + name)
     if blocked:
-        raise RouterError("Quit Codex/ChatGPT desktop and CLI, then retry in Terminal. Running processes: " + ", ".join(blocked), 4)
+        raise RouterError("Quit Codex/ChatGPT desktop and CLI" + (" and the old Router app" if include_router else "") + ", then retry in Terminal. Running processes: " + ", ".join(blocked), 4)
 
 
 @contextlib.contextmanager

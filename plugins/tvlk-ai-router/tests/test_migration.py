@@ -12,7 +12,7 @@ from tvlk_ai_router.config import RouterError, strip_block
 from tvlk_ai_router.migration import migrate, locations
 from tvlk_ai_router.desktop import dispatch
 from tvlk_ai_router.cli import parser
-from tvlk_ai_router.storage import inventory, lock
+from tvlk_ai_router.storage import inventory, lock, quiet_check
 
 PACKAGE = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("setup_helper", PACKAGE / "scripts/setup.py")
@@ -189,6 +189,12 @@ class MigrationTests(unittest.TestCase):
         with self.assertRaisesRegex(RouterError, "changed during migration"):
             self.migrate()
         self.assertTrue(locations()["management-skill"].exists())
+
+    def test_old_app_window_blocks_migration(self):
+        process = subprocess.CompletedProcess([], 0, stdout="99999 /test/TVLK-OpenAI-Router.app/Contents/MacOS/RouterInstaller\n")
+        with patch("tvlk_ai_router.storage.subprocess.run", return_value=process):
+            with self.assertRaisesRegex(RouterError, "old Router app"):
+                quiet_check(include_router=True)
 
 
 if __name__ == "__main__":

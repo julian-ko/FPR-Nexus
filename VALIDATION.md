@@ -4,13 +4,14 @@ Version 1.0.0 · 2026-10-13 · macOS Apple Silicon · Python 3.12.14
 
 ## Verified
 
-- 80 automated tests pass: the retained routing, storage, desktop, Shell, usage and plugin checks, plus nine migration/setup tests.
+- 81 automated tests pass: the retained routing, storage, desktop, Shell, usage and plugin checks, plus ten migration/setup tests. An open old Router app also blocks migration.
 - New setup and repeat setup preserve user settings, baseline backups and install time. Global instructions remain unchanged by plugin setup; no duplicate shared Skill is created.
 - App and Shell migration fixtures cover enabled, disabled and restored states, missing configuration after baseline restore, edited Skills, corrupt backups, active clients, interrupted moves and changed archived files.
 - Old programs are moved to the recovery archive. Router configuration and historical backup bytes remain in place. Migration retries finish remaining moves; ambiguous ownership stops before removal.
 - Restoring an active App/Shell snapshot keeps plugin ownership and removes the legacy routing block. It does not recreate the old shared Skill. Restoring the original baseline and then enabling remains supported.
 - A separate compatibility smoke check used the actual 0.4.2 Shell source to generate an installation in a temporary user directory. Migration to 1.0.0 preserved its original baseline, removed its old runtime and shared Skill paths, and left no managed-file drift.
 - The actual Codex CLI installed the local marketplace plugin as version 1.0.0 in an isolated HOME/CODEX_HOME. Both manifests, the packaged onboarding Skill and the hook files were present. This did not create router configuration before setup.
+- A remote GitHub check also downloaded and installed 1.0.0 from the private repository in a temporary HOME. The downloaded setup generated its durable command file without changing router configuration. The check used the owner's existing SSH authentication through a process-local Git URL rewrite.
 - The prepared setup file passes Bash syntax validation, survives independently of the plugin cache, preserves CODEX_HOME and does not mutate router state during preparation.
 - All four Bash scripts and the shell launcher pass syntax validation. Both Skills pass the official skill-creator validator.
 - Hook tests cover root session metadata, subagent exclusion, disabled routing, managed-file drift and version mismatch. A real isolated hook subprocess returned the expected JSON.

@@ -35,7 +35,7 @@ def prepare(package, python):
     command = target / "Setup-Router.command"
     inherited_home = os.environ.get("CODEX_HOME", str(home / ".codex"))
     command.write_text("#!/bin/bash\nset -u\nexport CODEX_HOME=" + shlex.quote(inherited_home) + "\n"
-        "printf 'TVLK-OpenAI-Router setup\\nQuit all Codex / ChatGPT windows and CLI sessions, then press Enter.\\n'\n"
+        "printf 'TVLK-OpenAI-Router setup\\nQuit Codex / ChatGPT, CLI sessions and the old Router app, then press Enter.\\n'\n"
         "read -r ready\n"
         "bash " + shlex.quote(str(target / "package/install.sh")) + " --python " + shlex.quote(str(python)) + "\n"
         "result=$?\n"
