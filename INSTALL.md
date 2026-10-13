@@ -8,7 +8,7 @@ Requires local Codex on macOS, access to this private GitHub repo, and Python 3.
 
 2. Run the plugin's **Set up** action, or enter `tvlk-ai-router setup` in a new chat. Review and trust its hooks when prompted.
 
-3. Follow the setup window prompt: quit Codex/ChatGPT and the old Router app if open, then press **Enter**. Setup checks the old installation, keeps backups, removes the old program and applies the plugin settings.
+3. Follow the setup window prompt: quit Codex/ChatGPT, CLI sessions and the old Router app if open. Leave the setup window open; it continues automatically when the clients exit. Setup checks the old installation, keeps backups, removes the old program and applies the plugin settings.
 
 4. Reopen Codex, start a new chat, and enter `tvlk-ai-router status`.
 

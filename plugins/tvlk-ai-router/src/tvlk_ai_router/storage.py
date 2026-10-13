@@ -13,6 +13,7 @@ from pathlib import Path
 
 from .config import RouterError, digest, json_bytes
 from .progress import progress, ByteProgress
+from .processes import running_clients
 
 
 def stamp():
@@ -146,18 +147,9 @@ def quiet_check(include_router=False):
     """Conservative by design: cannot determine every client's CODEX_HOME."""
     progress("check_apps", "Checking running Codex and ChatGPT processes")
     try:
-        listing = subprocess.run(["ps", "-axo", "pid=,comm="], capture_output=True, text=True, check=True).stdout
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise RouterError("Cannot check running applications; a macOS/Linux environment with ps is required", 4) from exc
-    blocked = []
-    for row in listing.splitlines():
-        fields = row.strip().split(None, 1)
-        if len(fields) != 2 or fields[0] == str(os.getpid()):
-            continue
-        name = Path(fields[1]).name.lower()
-        old_router = include_router and "/TVLK-OpenAI-Router.app/Contents/MacOS/" in fields[1]
-        if old_router or name in {"codex", "codex-cli", "codexcli", "chatgpt", "codex app"} or name.startswith(("chatgpt helper", "codex helper")):
-            blocked.append(fields[0] + ":" + name)
+        blocked = running_clients(include_router)
+    except RuntimeError as exc:
+        raise RouterError(str(exc), 4) from exc
     if blocked:
         raise RouterError("Quit Codex/ChatGPT desktop and CLI" + (" and the old Router app" if include_router else "") + ", then retry in Terminal. Running processes: " + ", ".join(blocked), 4)
 

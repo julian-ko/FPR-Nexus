@@ -12,7 +12,7 @@ if [[ "${1:-}" == "setup" ]]; then
   exit 0
 fi
 [[ -x "$plugin_runtime/tvlk-ai-router" ]] || { echo 'Setup is required. Invoke tvlk-ai-router setup first.' >&2; exit 4; }
-[[ "$("$plugin_runtime/tvlk-ai-router" --version)" == 'TVLK-OpenAI-Router 1.0.0' ]] || { echo 'The cached plugin and installed runtime versions differ. Run setup to update the runtime. The durable recovery command remains available.' >&2; exit 4; }
+[[ "$("$plugin_runtime/tvlk-ai-router" --version)" == 'TVLK-OpenAI-Router 1.0.1' ]] || { echo 'The cached plugin and installed runtime versions differ. Run setup to update the runtime. The durable recovery command remains available.' >&2; exit 4; }
 [[ $# -gt 0 ]] || set -- help
 case "$1" in
   config)

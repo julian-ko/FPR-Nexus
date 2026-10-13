@@ -131,7 +131,7 @@ class PluginTests(unittest.TestCase):
         self.assertIn("Setup-Router.command", setup.stdout)
         prepared = Path(setup.stdout.split("Setup file: ", 1)[1].strip())
         self.assertTrue(prepared.exists())
-        self.assertIn("--python", prepared.read_text())
+        self.assertIn("--install", prepared.read_text())
         self.runtime.mkdir(parents=True)
         engine = self.runtime / "tvlk-ai-router"
         engine.write_text("#!/bin/bash\necho 'TVLK-OpenAI-Router 0.4.2'\n")
