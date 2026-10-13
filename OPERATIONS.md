@@ -72,6 +72,6 @@ codex plugin marketplace add https://github.com/julian-ko/TVLK-OpenAI-Router
 codex plugin add tvlk-ai-router@tvlk-ai-router
 ```
 
-Then follow [setup](INSTALL.md). Python must be 3.11+ with venv/ensurepip. The pinned dependency installs offline; Python is not downloaded. No macOS security settings are changed.
+Then follow [setup](INSTALL.md). Setup finds Python 3.11+ with venv/ensurepip automatically, including existing router and Codex runtimes. To select another approved interpreter, use `bash "<plugin-root>/scripts/chat.sh" setup --python /absolute/path/to/python3 --open`. Direct Terminal installation also accepts `install.sh --python /absolute/path/to/python3`. The pinned dependency installs offline; Python is not downloaded. No macOS security settings are changed.
 
 Official reference: [Plugin packaging and onboarding](https://developers.openai.com/plugins/build/plugins).

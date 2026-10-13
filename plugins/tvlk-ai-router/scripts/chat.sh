@@ -3,16 +3,20 @@ set -euo pipefail
 plugin_directory=$(cd -- "$(dirname -- "$0")/.." && pwd)
 plugin_runtime="$HOME/.local/share/tvlk-ai-router-plugin/runtime"
 if [[ "${1:-}" == "setup" ]]; then
-  if command -v python3 >/dev/null 2>&1 && python3 -I -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
-    exec python3 -I "$plugin_directory/scripts/setup.py" "${@:2}"
-  else
-    printf 'Python 3.11 or newer is required. Choose an approved interpreter, quit Codex/ChatGPT, then run: bash %q --python /path/to/python3\n' "$plugin_directory/install.sh" >&2
-    exit 4
+  shift
+  installer_python=${TVLK_ROUTER_PYTHON:-}
+  if [[ "${1:-}" == "--python" ]]; then
+    [[ $# -ge 2 && -n "$2" ]] || { echo 'Error: --python requires an interpreter path.' >&2; exit 2; }
+    installer_python=$2
+    shift 2
   fi
-  exit 0
+  source "$plugin_directory/scripts/python.sh"
+  installer_python=$(tvlk_find_python "$installer_python")
+  printf 'Using Python: %s\n' "$installer_python"
+  exec "$installer_python" -I "$plugin_directory/scripts/setup.py" "$@"
 fi
 [[ -x "$plugin_runtime/tvlk-ai-router" ]] || { echo 'Setup is required. Invoke tvlk-ai-router setup first.' >&2; exit 4; }
-[[ "$("$plugin_runtime/tvlk-ai-router" --version)" == 'TVLK-OpenAI-Router 1.0.2' ]] || { echo 'The cached plugin and installed runtime versions differ. Run setup to update the runtime. The durable recovery command remains available.' >&2; exit 4; }
+[[ "$("$plugin_runtime/tvlk-ai-router" --version)" == 'TVLK-OpenAI-Router 1.0.3' ]] || { echo 'The cached plugin and installed runtime versions differ. Run setup to update the runtime. The durable recovery command remains available.' >&2; exit 4; }
 [[ $# -gt 0 ]] || set -- help
 case "$1" in
   config)

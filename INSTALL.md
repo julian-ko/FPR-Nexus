@@ -1,6 +1,6 @@
 # Install TVLK-OpenAI-Router
 
-Requires local Codex on macOS, access to this private GitHub repo, and Python 3.11+ with `venv` and `ensurepip`.
+Requires local Codex on macOS and access to this private GitHub repo. Setup automatically finds an existing Python 3.11+ with `venv` and `ensurepip`, including the Codex bundled runtime when available. It does not download Python. If none is found, obtain an approved Python from IT and retry setup.
 
 1. In Codex, send:
 

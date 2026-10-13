@@ -1,10 +1,11 @@
 # Validation
 
-Version 1.0.2 · 2026-10-13 · macOS Apple Silicon · Python 3.12.14
+Version 1.0.3 · 2026-10-13 · macOS Apple Silicon · Python 3.12.14
 
 ## Verified
 
-- 91 automated tests pass. Terminal progress checks cover updates on one line, clearing old text, preventing wrapping, readable redirected logs and clean result/error output. The existing checks cover automatic waiting, clients restarting during the wait, continuation without keyboard input, cancellation, detection failure and propagation of installer failure. The retained tests verify that active clients still block configuration writes.
+- 97 automated tests pass. Python discovery tests cover skipping an old default interpreter, reusing an existing runtime, explicit invalid selections, paths with spaces, setup preparation and missing arguments. Terminal progress checks cover updates on one line, clearing old text, preventing wrapping, readable redirected logs and clean result/error output. The retained tests verify that active clients still block configuration writes.
+- On the development host, the default Python is 3.9.6; automatic discovery selects the existing router interpreter. Codex's bundled Python 3.12.14 also passed a real temporary venv creation and offline tomlkit installation. No live user configuration was changed.
 - Terminal setup reuses one progress line across byte-processing stages. Percentages describe the current stage. Redirected output keeps plain log lines; native-launcher JSON progress events remain unchanged.
 - The independent setup window waits for two consecutive clear process scans, then starts installation automatically. It shares client detection with the write guard; the installer still checks clients before writing. Waiting does not initialize the private environment or change router configuration.
 - New setup and repeat setup preserve user settings, baseline backups and install time. Global instructions remain unchanged by plugin setup; no duplicate shared Skill is created.
@@ -25,6 +26,6 @@ Migration tests use temporary user directories, fixture model availability and a
 
 The CLI check proves marketplace discovery and cache installation. It does not prove the desktop Set up button, Terminal opening, hook trust or end-to-end model delegation on a teammate's computer. Those require the target client and account.
 
-Setup needs an approved Python 3.11+ interpreter. The private environment depends on that interpreter. Other operating systems, Intel Macs and organizational policy combinations were not tested.
+Setup needs a usable Python 3.11+ interpreter with venv and ensurepip. It checks existing installations and the Codex bundled path when available; it does not download Python. The private environment depends on that interpreter, so removing its base Python can break it. Bundled runtime availability and location may differ on other clients; setup also accepts an explicit approved path. Other operating systems, Intel Macs and organizational policy combinations were not tested.
 
 The plugin host installs plugin files before onboarding. Legacy removal happens during setup, before native plugin settings are applied. Removing the plugin alone does not undo model configuration; use disable or restore first. Local usage review is not billing or account-quota measurement.

@@ -1,6 +1,6 @@
 {
   "name": "tvlk-ai-router",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Task routing, local model usage and safe native configuration recovery.",
   "skills": "./skills",
   "hooks": "./hooks/hooks.json",

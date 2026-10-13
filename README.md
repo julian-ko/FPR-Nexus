@@ -1,6 +1,6 @@
 # TVLK-OpenAI-Router
 
-Version 1.0.2 · Personal Codex plugin · macOS
+Version 1.0.3 · Personal Codex plugin · macOS
 
 ## What
 
