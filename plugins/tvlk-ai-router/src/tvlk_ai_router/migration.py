@@ -112,6 +112,8 @@ def migrate(runtime):
                        "previous_state": m.state,
                        "signatures": {k: tree_signature(p) for k, p in paths.items() if p.exists()}}
             atomic(journal_path, json_bytes(journal))
+        from .progress import finish_progress
+        finish_progress()
         print("Removing the previous router; preserving settings and verified backups…", flush=True)
         m.change("disable")
         journal["phase"] = "disabled"
@@ -134,4 +136,5 @@ def migrate(runtime):
         atomic(state_path, json_bytes(next_state))
         journal["phase"] = "complete"
         atomic(journal_path, json_bytes(journal))
+        finish_progress()
         print("Previous program removed. Backups remain at " + str(m.store()), flush=True)

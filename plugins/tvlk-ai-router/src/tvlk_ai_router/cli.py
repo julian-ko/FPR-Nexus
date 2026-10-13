@@ -8,6 +8,7 @@ from importlib.resources import files
 from . import __version__
 from .config import RouterError
 from .manager import Manager
+from .progress import finish_progress
 from .storage import lock, quiet_check, recover
 
 
@@ -87,6 +88,7 @@ def parser():
 
 
 def display(value, machine=False):
+    finish_progress()
     # JSON contains only the deliberately constructed public report, not raw config.
     if machine:
         print(json.dumps(value, ensure_ascii=False, indent=2))
@@ -171,12 +173,16 @@ def main(argv=None):
             print(HELP)
         return 0
     except RouterError as exc:
+        finish_progress()
         print(json.dumps({"error": str(exc), "exit_code": exc.code}, ensure_ascii=False) if getattr(args, "json", False) else "Error: " + str(exc), file=sys.stderr)
         return exc.code
     except (OSError, ValueError, KeyError, TypeError) as exc:
+        finish_progress()
         # Avoid raw tracebacks or configuration contents in ordinary command output.
         print("Error: Cannot safely process local files: " + str(exc), file=sys.stderr)
         return 4
+    finally:
+        finish_progress()
 
 
 if __name__ == "__main__":

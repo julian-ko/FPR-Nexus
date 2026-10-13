@@ -4,8 +4,18 @@ import os
 import sys
 import time
 
+_active_stream = None
+
+
+def finish_progress():
+    global _active_stream
+    if _active_stream is not None:
+        print(file=_active_stream, flush=True)
+        _active_stream = None
+
 
 def progress(stage, message, completed=None, total=None, unit=None):
+    global _active_stream
     mode = os.environ.get("TVLK_ROUTER_PROGRESS")
     if mode not in ("1", "text"):
         return
@@ -13,9 +23,19 @@ def progress(stage, message, completed=None, total=None, unit=None):
         if total and completed is not None:
             fraction = min(1, completed / total)
             bar = "#" * int(fraction * 20)
-            print(f"[{bar:<20}] {fraction:.0%} {message} ({completed}/{total} {unit or ''})", file=sys.stderr, flush=True)
+            line = f"[{bar:<20}] {fraction:.0%} {message} ({completed}/{total} {unit or ''})"
         else:
-            print(message, file=sys.stderr, flush=True)
+            line = f"[{' ' * 20}] {message}"
+        if sys.stderr.isatty():
+            try:
+                columns = os.get_terminal_size(sys.stderr.fileno()).columns
+            except (OSError, ValueError):
+                columns = 80
+            # Leave a spare column so updates never wrap onto another row.
+            print("\r\033[2K" + line[:max(0, columns - 1)], end="", file=sys.stderr, flush=True)
+            _active_stream = sys.stderr
+        else:
+            print(line, file=sys.stderr, flush=True)
         return
     value = {"stage": stage, "message": message}
     if completed is not None:

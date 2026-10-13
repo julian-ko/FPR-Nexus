@@ -1,10 +1,11 @@
 # Validation
 
-Version 1.0.1 · 2026-10-13 · macOS Apple Silicon · Python 3.12.14
+Version 1.0.2 · 2026-10-13 · macOS Apple Silicon · Python 3.12.14
 
 ## Verified
 
-- 86 automated tests pass. Five new checks cover automatic waiting, clients restarting during the wait, continuation without keyboard input, cancellation, detection failure and propagation of installer failure. The retained tests verify that active clients still block configuration writes.
+- 91 automated tests pass. Terminal progress checks cover updates on one line, clearing old text, preventing wrapping, readable redirected logs and clean result/error output. The existing checks cover automatic waiting, clients restarting during the wait, continuation without keyboard input, cancellation, detection failure and propagation of installer failure. The retained tests verify that active clients still block configuration writes.
+- Terminal setup reuses one progress line across byte-processing stages. Percentages describe the current stage. Redirected output keeps plain log lines; native-launcher JSON progress events remain unchanged.
 - The independent setup window waits for two consecutive clear process scans, then starts installation automatically. It shares client detection with the write guard; the installer still checks clients before writing. Waiting does not initialize the private environment or change router configuration.
 - New setup and repeat setup preserve user settings, baseline backups and install time. Global instructions remain unchanged by plugin setup; no duplicate shared Skill is created.
 - App and Shell migration fixtures cover enabled, disabled and restored states, missing configuration after baseline restore, edited Skills, corrupt backups, active clients, interrupted moves and changed archived files.
