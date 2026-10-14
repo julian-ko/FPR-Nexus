@@ -62,6 +62,12 @@ class FailedShellTests(unittest.TestCase):
         self.assertEqual(self.f.manager().drift(), [])
 
     def test_real_plugin_bootstrap_after_failed_shell(self):
+        for name in ("app-server-control", "app-server-daemon", "archived_sessions", "macos",
+                     "tui-thread-preference-capabilities"):
+            directory = self.f.home / name
+            directory.mkdir()
+            (directory / "fixture").write_text("preserve me")
+        (self.f.home / "config.toml.before-tvlk-1.0.4-20261014-102443").write_bytes(self.f.original)
         real_run = subprocess.run
         def run(args, **kwargs):
             if "shell-install" in args:

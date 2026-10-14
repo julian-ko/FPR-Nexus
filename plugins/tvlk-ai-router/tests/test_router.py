@@ -284,7 +284,8 @@ class RouterTests(unittest.TestCase):
             self.manager().restore(first)
 
     def test_new_runtime_directories_are_backed_up_and_config_restore_preserves_them(self):
-        names = ("claude-cowork-transcript-imports", "project-metadata-locks")
+        names = ("claude-cowork-transcript-imports", "project-metadata-locks", "archived_sessions",
+                 "app-server-control", "app-server-daemon", "macos", "tui-thread-preference-capabilities")
         runtime_files = []
         m = self.manager()
         roots = [self.home, self.cfg, self.shared]
@@ -294,8 +295,9 @@ class RouterTests(unittest.TestCase):
             child.parent.mkdir(parents=True)
             child.write_bytes(b"before install")
             runtime_files.append(child)
-            self.assertEqual(m.classify(directory, roots), "runtime")
-            self.assertEqual(m.classify(child, roots), "runtime")
+            expected = "runtime" if name in names[:3] else "preserved"
+            self.assertEqual(m.classify(directory, roots), expected)
+            self.assertEqual(m.classify(child, roots), expected)
             self.assertEqual(m.classify(self.home / "custom" / name, roots), "unknown")
             self.assertEqual(m.classify(self.home / (name + "-custom"), roots), "unknown")
         first = self.install()["backup_id"]
@@ -318,6 +320,37 @@ class RouterTests(unittest.TestCase):
         unrelated.mkdir(parents=True)
         with self.assertRaises(RouterError):
             self.manager().restore(first)
+
+    def test_timestamped_config_copy_is_backed_up_and_preserved(self):
+        saved_copy = self.home / "config.toml.before-tvlk-1.0.4-20261014-102443"
+        saved_copy.write_bytes(self.original)
+        first = self.install()["backup_id"]
+        saved = load_snapshot(self.backups, first)["entries"][str(saved_copy)]
+        self.assertEqual((self.backups / first / "files" / saved["sha256"]).read_bytes(), self.original)
+        newer_copy = self.home / "config.toml.before-tvlk-1.0.5-20261014-112443"
+        newer_copy.write_bytes(b"later backup")
+        self.manager().restore(first)
+        self.assertEqual(saved_copy.read_bytes(), self.original)
+        self.assertEqual(newer_copy.read_bytes(), b"later backup")
+        for name in ("config.toml.before-tvlk-custom", saved_copy.name + "-custom"):
+            self.assertEqual(self.manager().classify(self.home / name, [self.home]), "unknown")
+
+    def test_client_state_socket_is_recorded_and_preserved(self):
+        import socket
+        directory = self.home / "app-server-control"
+        directory.mkdir()
+        path = directory / "control.sock"
+        with socket.socket(socket.AF_UNIX) as sock:
+            cwd = Path.cwd()
+            try:
+                os.chdir(directory)
+                sock.bind(path.name)
+            finally:
+                os.chdir(cwd)
+            first = self.install()["backup_id"]
+            self.assertEqual(load_snapshot(self.backups, first)["entries"][str(path)]["type"], "special")
+            self.manager().restore(first)
+            self.assertTrue(path.is_socket())
 
     def test_unknown_files_fail_closed_and_explicit_config_is_supported(self):
         unknown = self.home / "custom.setting"

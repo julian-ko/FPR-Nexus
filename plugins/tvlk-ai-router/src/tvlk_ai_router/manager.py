@@ -18,12 +18,14 @@ from .storage import (absolute, entry, inventory, unique_roots, ensure_outside,
 PURE = {"config.toml", "AGENTS.md", "AGENTS.override.md", "agents", "skills", "hooks",
         "hooks.json", "prompts", "plugins", "rules", "auth.json", "requirements.toml", "automations"}
 MIXED = {".codex-global-state.json", ".codex-global-state.json.bak"}
+# Client-owned state can contain preferences; back it up without rewriting it on config restore.
+PRESERVED = {"app-server-control", "app-server-daemon", "macos", "tui-thread-preference-capabilities"}
 RUNTIME = {".sandbox_migration", ".tmp", "ambient-suggestions", "attachments", "cache",
            "claude-cowork-import-history.json", "claude-cowork-transcript-imports",
            "project-metadata-locks", "cloud-config-bundle-cache.json", "code-review-plugin",
            "computer-use", "context-mode", "dictation-history", "external_agent_session_imports.json",
            "installation_id", "ipc", "memories", "models_cache.json", "node_repl", "pets",
-           "rollout-migrations", "session_index.jsonl", "sessions", "shell_snapshots", "sqlite",
+           "rollout-migrations", "session_index.jsonl", "sessions", "archived_sessions", "shell_snapshots", "sqlite",
            "thread-writer-locks", "tmp", "transcription-history.jsonl", "vendor_imports",
            "visualizations", "worktrees", "history.jsonl", "log", "logs", "version.json"}
 
@@ -155,6 +157,8 @@ class Manager:
                 return "config"
             if first in MIXED:
                 return "mixed"
+            if first in PRESERVED or re.fullmatch(r"config\.toml\.before-tvlk-\d+\.\d+\.\d+-\d{8}-\d{6}", first):
+                return "preserved"
             if first in RUNTIME or re.fullmatch(r".*\.sqlite(?:-wal|-shm)?", first):
                 return "runtime"
             return "unknown"
@@ -435,7 +439,7 @@ class Manager:
             if a.get("type") == "special" or b.get("type") == "special":
                 preserved.append(name)
                 continue
-            if scope == "config" and kind in ("runtime", "root"):
+            if scope == "config" and kind in ("runtime", "root", "preserved"):
                 preserved.append(name)
                 continue
             if a == b:

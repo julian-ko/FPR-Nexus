@@ -1,10 +1,12 @@
 # Validation
 
-Version 1.0.4 · 2026-10-13 · macOS Apple Silicon · Python 3.12.14
+Version 1.0.5 · 2026-10-14 · macOS Apple Silicon · Python 3.12.14
 
 ## Verified
 
-- 105 automated tests pass. Eight new checks cover failed Shell detection, read-only preparation, lossless archival, fresh installation, unknown history, edited files, symlinks, client/installer locks, interrupted moves and archive collisions. The retained tests cover Python discovery, terminal progress and client checks before configuration writes.
+- Setup accepts the six paths reported by the teammate: archived sessions, four client state locations and timestamped pre-router config copies. All regular contents enter the verified snapshot; normal configuration restore preserves their current state. Sockets are recorded as special files and left untouched. Only the exact client names and the version/date backup pattern are accepted; unrelated unknown content still stops setup.
+- Regression checks verify snapshot bytes, preservation of changed client state and later backup copies, missing runtime directories, socket handling and rejection of look-alike names. The reported directory layout was reproduced in a temporary user directory; the teammate's actual directory contents were not inspected.
+- 107 automated tests pass. Eight new checks cover failed Shell detection, read-only preparation, lossless archival, fresh installation, unknown history, edited files, symlinks, client/installer locks, interrupted moves and archive collisions. The retained tests cover Python discovery, terminal progress and client checks before configuration writes.
 - Shell 0.4.1/0.4.2 bootstrap leftovers are accepted only with the exact ownership marker and known remaining wrapper hashes, no installed source, and no saved configuration, backups, transactions or native router markers. The whole runtime is renamed to a recovery archive after the cold-client check and under both router and Shell installer locks. No old executable runs and no backup is deleted.
 - On the development host, the default Python is 3.9.6; automatic discovery selects the existing router interpreter. Codex's bundled Python 3.12.14 also passed a real temporary venv creation and offline tomlkit installation. No live user configuration was changed.
 - Terminal setup reuses one progress line across byte-processing stages. Percentages describe the current stage. Redirected output keeps plain log lines; native-launcher JSON progress events remain unchanged.
