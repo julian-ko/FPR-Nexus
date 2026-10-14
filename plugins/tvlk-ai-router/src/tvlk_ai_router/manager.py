@@ -18,8 +18,6 @@ from .storage import (absolute, entry, inventory, unique_roots, ensure_outside,
 PURE = {"config.toml", "AGENTS.md", "AGENTS.override.md", "agents", "skills", "hooks",
         "hooks.json", "prompts", "plugins", "rules", "auth.json", "requirements.toml", "automations"}
 MIXED = {".codex-global-state.json", ".codex-global-state.json.bak"}
-# Client-owned state can contain preferences; back it up without rewriting it on config restore.
-PRESERVED = {"app-server-control", "app-server-daemon", "macos", "tui-thread-preference-capabilities"}
 RUNTIME = {".sandbox_migration", ".tmp", "ambient-suggestions", "attachments", "cache",
            "claude-cowork-import-history.json", "claude-cowork-transcript-imports",
            "project-metadata-locks", "cloud-config-bundle-cache.json", "code-review-plugin",
@@ -88,7 +86,8 @@ class Manager:
         roots = [self.home, self.shared, self.config_dir]
         roots += [absolute(p) for p in d["backup"]["additional_config_paths"]]
         # Explicit local file references; never interpret command strings or URLs.
-        pending = list(self.home.glob("*.toml")) if self.home.exists() else []
+        pending = [p for p in self.home.glob("*.toml") if self.classify(p, roots) == "config"]
+        pending += [p for p in roots[3:] if p.is_file() and p.suffix == ".toml"]
         seen = set()
         while pending:
             f = pending.pop()
@@ -157,22 +156,22 @@ class Manager:
                 return "config"
             if first in MIXED:
                 return "mixed"
-            if first in PRESERVED or re.fullmatch(r"config\.toml\.before-tvlk-\d+\.\d+\.\d+-\d{8}-\d{6}", first):
-                return "preserved"
             if first in RUNTIME or re.fullmatch(r".*\.sqlite(?:-wal|-shm)?", first):
                 return "runtime"
-            return "unknown"
+            # Snapshot unfamiliar client/user content, but never infer how to rewrite it.
+            return "preserved"
         return "config"
 
     def report(self, d, check_models=True):
         roots = self.roots(d)
         entries = inventory(roots, progress_stage="report_inventory")
-        unknown = sorted({str(self.home / Path(p).relative_to(self.home).parts[0])
-                          for p in entries if self.classify(Path(p), roots) == "unknown"})
+        preserved = sorted({str(self.home / Path(p).relative_to(self.home).parts[0])
+                            for p in entries if self.classify(Path(p), roots) == "preserved"})
         if check_models:
             progress("check_models", "Checking configured models and reasoning levels against the client cache")
         return {"roots": list(map(str, roots)), "bytes": sum(e.get("size", 0) for e in entries.values()),
-                "unknown_configuration": unknown,
+                "preserved_paths": preserved,
+                "preservation_policy": "Unrecognized Codex Home content is included in the snapshot and left unchanged by setup and config restore. Symlinks are saved as links, not followed; special files are recorded only. Use additional_config_paths for extra config restore targets.",
                 "mixed_state": [p for p in entries if self.classify(Path(p), roots) == "mixed"],
                 "model_check": model_check(self.home, d) if check_models else {"status": "not_required"}, "runtime": "unverified"}
 
@@ -361,8 +360,6 @@ class Manager:
                                    "after_sha256": digest(v) if v is not None else None} for p, v in edits.items()]
         report["models"] = {"coordinator": d["coordinator"], "agents": {
             k: {x: a[x] for x in ("model", "reasoning_effort")} for k, a in d["agents"].items()}}
-        if report["unknown_configuration"]:
-            raise RouterError("Unclassified user files found; review them and add confirmed configuration paths to additional_config_paths: " + ", ".join(report["unknown_configuration"]), 4)
         if action != "disable" and report["model_check"]["status"] != "cache_matched":
             if not dry:
                 raise RouterError(report["model_check"]["reason"], 3)
@@ -434,8 +431,6 @@ class Manager:
                     preserved.append(name)
                     continue
             kind = self.classify(path, roots)
-            if kind == "unknown" and scope == "config":
-                raise RouterError("Restore encountered unclassified content; no changes were written: " + name, 4)
             if a.get("type") == "special" or b.get("type") == "special":
                 preserved.append(name)
                 continue

@@ -130,11 +130,10 @@ class ShellTests(unittest.TestCase):
 
     def test_failed_041_first_bootstrap_reuses_environment_on_retry(self):
         import shutil
-        import tvlk_ai_router.manager as manager_module
         home = self.fixture.root / "retry user"
         home.mkdir()
         shutil.copytree(self.fixture.home, home / ".codex")
-        names = {"claude-cowork-transcript-imports", "project-metadata-locks"}
+        names = {"packages", "tui-thread-reference-capabilities", "future-client-data"}
         for name in names:
             (home / ".codex" / name).mkdir()
             (home / ".codex" / name / "runtime.bin").write_bytes(b"runtime data")
@@ -151,7 +150,8 @@ class ShellTests(unittest.TestCase):
             return real_run(args, **kwargs)
         with patch("pathlib.Path.home", return_value=home), patch.dict(os.environ, {"HOME": str(home), "CODEX_HOME": str(home / ".codex")}), patch.object(installer.subprocess, "run", side_effect=run), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             before = (home / ".codex/config.toml").read_bytes()
-            with patch.object(manager_module, "RUNTIME", manager_module.RUNTIME - names):
+            # Reproduce the old release's failure after bootstrap, before configuration writes.
+            with patch.object(Manager, "report", side_effect=RouterError("Unclassified user files found", 4)):
                 with self.assertRaises(subprocess.CalledProcessError):
                     installer.install(PACKAGE, self.fixture.input)
             self.assertTrue((runtime / ".venv/bin/python").exists())

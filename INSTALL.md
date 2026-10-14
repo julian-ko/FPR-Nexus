@@ -14,4 +14,6 @@ Requires local Codex on macOS and access to this private GitHub repo. Setup auto
 
 No manual cleanup is needed for a verified App or Shell installation. Recognized leftovers from a failed Shell setup are archived automatically. If a conflict is reported, keep the files and share the error.
 
+After a failed older setup, update the plugin and start a new **Set up** window. An old setup window or command file still runs its old copy. New Codex folders are backed up and preserved automatically; no manual classification is needed.
+
 [Commands and recovery](OPERATIONS.md)

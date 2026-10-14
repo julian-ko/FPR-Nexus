@@ -135,8 +135,6 @@ def main(argv=None):
             else:
                 _, d = m.config(args.config)
                 result = m.report(d)
-                if result["unknown_configuration"]:
-                    raise RouterError("Unclassified configuration: " + ", ".join(result["unknown_configuration"]), 4)
             display(result, args.json)
             return 0
         if args.command == "backup":

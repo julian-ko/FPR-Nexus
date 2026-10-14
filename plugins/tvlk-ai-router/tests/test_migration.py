@@ -24,6 +24,10 @@ class MigrationTests(unittest.TestCase):
     def setUp(self):
         self.f = fixtures.RouterTests()
         self.f.setUp()
+        for name in ("packages", "tui-thread-reference-capabilities", "future-client-data"):
+            directory = self.f.home / name
+            directory.mkdir()
+            (directory / "data").write_bytes(b"preserve across legacy migration")
         old_backups = str(self.f.backups)
         self.f.cfg = self.f.root / ".config/tvlk-ai-router"
         self.f.shared = self.f.root / ".agents"
@@ -67,6 +71,8 @@ class MigrationTests(unittest.TestCase):
     def migrate(self):
         with patch("tvlk_ai_router.migration.verify_app"):
             migrate(self.runtime)
+        for name in ("packages", "tui-thread-reference-capabilities", "future-client-data"):
+            self.assertEqual((self.f.home / name / "data").read_bytes(), b"preserve across legacy migration")
 
     def test_app_migration_preserves_config_backups_and_restore(self):
         baseline, old = self.old()

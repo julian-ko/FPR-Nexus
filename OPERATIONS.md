@@ -75,3 +75,9 @@ codex plugin add tvlk-ai-router@tvlk-ai-router
 Then follow [setup](INSTALL.md). Setup finds Python 3.11+ with venv/ensurepip automatically, including existing router and Codex runtimes. To select another approved interpreter, use `bash "<plugin-root>/scripts/chat.sh" setup --python /absolute/path/to/python3 --open`. Direct Terminal installation also accepts `install.sh --python /absolute/path/to/python3`. The pinned dependency installs offline; Python is not downloaded. No macOS security settings are changed.
 
 Official reference: [Plugin packaging and onboarding](https://developers.openai.com/plugins/build/plugins).
+
+## Files added by newer clients
+
+Setup backs up unfamiliar Codex Home files and leaves them in place. `preserved_paths` is an informational list, not an error. Config restore keeps their current contents, including files added after the backup. Only an explicitly requested full restore rolls them back. Add a path to `additional_config_paths` only when you want it treated as configuration for normal restore.
+
+Regular files are copied and verified. Symlinks are saved as links without following unknown external targets; sockets and other special files are recorded but not recreated. Unreadable or changing data still stops setup before configuration writes. Router ownership, managed-file conflicts and client-exit checks remain enforced.

@@ -261,8 +261,8 @@ class RouterTests(unittest.TestCase):
         m = self.manager()
         roots = [self.home, self.shared, self.cfg]
         self.assertEqual(m.classify(maintenance, roots), "runtime")
-        self.assertEqual(m.classify(self.home / "other.lock", roots), "unknown")
-        self.assertEqual(m.classify(self.home / "custom" / maintenance.name, roots), "unknown")
+        self.assertEqual(m.classify(self.home / "other.lock", roots), "preserved")
+        self.assertEqual(m.classify(self.home / "custom" / maintenance.name, roots), "preserved")
         first = self.install()["backup_id"]
         self.assertEqual(maintenance.read_bytes(), b"baseline lock data")
         self.assertEqual(maintenance.stat().st_ino, original_inode)
@@ -280,8 +280,8 @@ class RouterTests(unittest.TestCase):
         self.assertFalse(maintenance.exists())
         unknown = self.home / "other.lock"
         unknown.write_bytes(b"unclassified data")
-        with self.assertRaises(RouterError):
-            self.manager().restore(first)
+        self.manager().restore(first)
+        self.assertEqual(unknown.read_bytes(), b"unclassified data")
 
     def test_new_runtime_directories_are_backed_up_and_config_restore_preserves_them(self):
         names = ("claude-cowork-transcript-imports", "project-metadata-locks", "archived_sessions",
@@ -298,8 +298,8 @@ class RouterTests(unittest.TestCase):
             expected = "runtime" if name in names[:3] else "preserved"
             self.assertEqual(m.classify(directory, roots), expected)
             self.assertEqual(m.classify(child, roots), expected)
-            self.assertEqual(m.classify(self.home / "custom" / name, roots), "unknown")
-            self.assertEqual(m.classify(self.home / (name + "-custom"), roots), "unknown")
+            self.assertEqual(m.classify(self.home / "custom" / name, roots), "preserved")
+            self.assertEqual(m.classify(self.home / (name + "-custom"), roots), "preserved")
         first = self.install()["backup_id"]
         manifest = load_snapshot(self.backups, first)
         for child in runtime_files:
@@ -318,8 +318,8 @@ class RouterTests(unittest.TestCase):
             self.assertFalse((self.home / name).exists())
         unrelated = self.home / "custom" / names[0]
         unrelated.mkdir(parents=True)
-        with self.assertRaises(RouterError):
-            self.manager().restore(first)
+        self.manager().restore(first)
+        self.assertTrue(unrelated.is_dir())
 
     def test_timestamped_config_copy_is_backed_up_and_preserved(self):
         saved_copy = self.home / "config.toml.before-tvlk-1.0.4-20261014-102443"
@@ -333,7 +333,7 @@ class RouterTests(unittest.TestCase):
         self.assertEqual(saved_copy.read_bytes(), self.original)
         self.assertEqual(newer_copy.read_bytes(), b"later backup")
         for name in ("config.toml.before-tvlk-custom", saved_copy.name + "-custom"):
-            self.assertEqual(self.manager().classify(self.home / name, [self.home]), "unknown")
+            self.assertEqual(self.manager().classify(self.home / name, [self.home]), "preserved")
 
     def test_client_state_socket_is_recorded_and_preserved(self):
         import socket
@@ -352,13 +352,62 @@ class RouterTests(unittest.TestCase):
             self.manager().restore(first)
             self.assertTrue(path.is_socket())
 
-    def test_unknown_files_fail_closed_and_explicit_config_is_supported(self):
+    def test_unfamiliar_content_survives_install_validate_and_config_restore(self):
+        names = ("packages", "tui-thread-reference-capabilities", "future-client-data")
+        for name in names:
+            directory = self.home / name
+            directory.mkdir()
+            (directory / "data.bin").write_bytes(b"original bytes")
+        opaque = self.home / "unrelated.toml"
+        opaque.write_bytes(b"not a TOML configuration [")
+        link = self.home / "future-client-link"
+        link.symlink_to(self.root / "missing-target")
+        before = inventory([self.home / n for n in names] + [opaque, link])
+        result = self.install()
+        self.assertEqual(before, inventory([self.home / n for n in names] + [opaque, link]))
+        saved = load_snapshot(self.backups, result["backup_id"])
+        for path, entry_data in before.items():
+            self.assertEqual(saved["entries"][path], entry_data)
+        self.assertIn(str(self.home / names[0]), result["preserved_paths"])
+        code, out, err = self.cli("config", "validate", "--json")
+        self.assertEqual(code, 0, err)
+        self.assertIn(str(opaque), json.loads(out)["preserved_paths"])
+        changed = self.home / names[0] / "data.bin"
+        changed.write_bytes(b"new bytes")
+        later = self.home / "future-added-after-install"
+        later.write_bytes(b"keep later data")
+        self.manager().change("disable")
+        self.manager().change("enable")
+        self.manager().restore(result["backup_id"])
+        self.assertEqual(changed.read_bytes(), b"new bytes")
+        self.assertEqual(later.read_bytes(), b"keep later data")
+        self.assertTrue(link.is_symlink())
+        self.manager().restore(result["backup_id"], scope="full")
+        self.assertEqual(changed.read_bytes(), b"original bytes")
+        self.assertFalse(later.exists())
+
+    def test_unreadable_preserved_content_still_blocks_writes(self):
+        blocked = self.home / "future-client-file"
+        blocked.write_bytes(b"must be backed up")
+        original_open = Path.open
+        def checked_open(path, *args, **kwargs):
+            if path == blocked:
+                raise PermissionError("fixture read denied")
+            return original_open(path, *args, **kwargs)
+        with patch.object(Path, "open", checked_open):
+            with self.assertRaises(PermissionError):
+                self.install()
+        self.assertEqual((self.home / "config.toml").read_bytes(), self.original)
+        self.assertFalse(self.manager().state_file.exists())
+
+    def test_explicit_configuration_path_remains_restorable(self):
         unknown = self.home / "custom.setting"
         unknown.write_text("user configuration")
-        with self.assertRaises(RouterError):
-            self.install()
         self.input.write_text(self.input.read_text().replace("additional_config_paths = []", 'additional_config_paths = ["' + str(unknown) + '"]'))
-        self.install()
+        first = self.install()["backup_id"]
+        unknown.write_text("changed")
+        self.manager().restore(first)
+        self.assertEqual(unknown.read_text(), "user configuration")
 
     def test_symlink_managed_target_is_rejected(self):
         p = self.home / "config.toml"

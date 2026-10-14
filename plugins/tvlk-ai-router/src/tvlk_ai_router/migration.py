@@ -128,8 +128,8 @@ def migrate(runtime):
                 config = parse(files("tvlk_ai_router").joinpath("data/router.example.toml").read_bytes())
                 config["backup"]["directory"] = str(m.store())
             report = m.report(config)
-            if report["unknown_configuration"] or report["model_check"]["status"] != "cache_matched":
-                raise RouterError("Resolve configuration classification and model availability before migration", 4)
+            if report["model_check"]["status"] != "cache_matched":
+                raise RouterError("Resolve model availability before migration", 4)
             journal = {"schema": 1, "runtime": str(runtime), "targets": expected_targets,
                        "items": [k for k, p in paths.items() if p.exists()], "phase": "prepared",
                        "previous_state": m.state,

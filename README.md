@@ -1,6 +1,6 @@
 # TVLK-OpenAI-Router
 
-Version 1.0.5 · Personal Codex plugin · macOS
+Version 1.0.6 · Personal Codex plugin · macOS
 
 ## What
 
@@ -21,6 +21,7 @@ These are team defaults, not official best settings for every task. Your account
 - One GitHub link for the team. No separate App package.
 - One editable file for models, reasoning and routing rules.
 - Verified backups before changes, with disable and restore commands.
+- New client folders are backed up and kept as they are; they do not need a Router update.
 - A setup check replaces the old router without losing settings or backups.
 
 The main assistant reads the request and delegates work. It also reads context and reviews the result, so its token use is more than a short classification call.
