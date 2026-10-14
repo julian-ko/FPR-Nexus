@@ -1,5 +1,6 @@
 """Ownership-aware install/disable and independent backup restoration."""
 import base64
+import errno
 import json
 import os
 import re
@@ -125,10 +126,17 @@ class Manager:
                 if e["type"] == "link" and (not p.is_relative_to(self.home) or self.classify(p, roots) == "config"):
                     try:
                         resolved = p.resolve()
-                    except RuntimeError as exc:
-                        raise RouterError("Configuration symbolic link cycle: " + str(p), 4) from exc
+                    except (RuntimeError, OSError) as exc:
+                        if isinstance(exc, OSError) and exc.errno != errno.ELOOP:
+                            raise
+                        if p in roots[3:]:
+                            raise RouterError("Configuration symbolic link cycle: " + str(p), 4) from exc
+                        continue
                     if not resolved.exists():
-                        raise RouterError("Configuration symbolic link target does not exist: " + str(p), 4)
+                        if p in roots[3:]:
+                            raise RouterError("Configuration symbolic link target does not exist: " + str(p), 4)
+                        # Incidental dangling links are already backed up as links.
+                        continue
                     if not any(resolved == r or resolved.is_relative_to(r) for r in roots):
                         discovered.append(resolved)
             if not discovered:
@@ -151,7 +159,10 @@ class Manager:
         if path == self.home / ".sqlite-maintenance.lock":
             return "runtime"
         if path.is_relative_to(self.home):
-            first = path.relative_to(self.home).parts[0]
+            parts = path.relative_to(self.home).parts
+            if parts[:2] == ("plugins", "cache"):
+                return "runtime"
+            first = parts[0]
             if first in PURE or first.endswith(".config.toml"):
                 return "config"
             if first in MIXED:

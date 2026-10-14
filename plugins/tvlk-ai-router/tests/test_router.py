@@ -431,6 +431,52 @@ class RouterTests(unittest.TestCase):
         self.assertIn(str(external), manifest["entries"])
         self.assertIn(str(target / "SKILL.md"), manifest["entries"])
 
+    def test_plugin_cache_links_are_backed_up_without_following_or_config_restore(self):
+        cache = self.home / "plugins/cache/context-mode/context-mode/1.0.169"
+        binaries = cache / "node_modules/.bin"
+        binaries.mkdir(parents=True)
+        broken = binaries / "node-which"
+        broken.symlink_to("../which/bin/node-which")
+        loop = binaries / "cycle"
+        loop.symlink_to("cycle")
+        external = self.root / "external-package"
+        external.mkdir()
+        (external / "data").write_bytes(b"not a configuration dependency")
+        (binaries / "valid").symlink_to(external)
+        cached = cache / "program.py"
+        cached.write_bytes(b"before")
+        first = self.install()["backup_id"]
+        snapshot = load_snapshot(self.backups, first)
+        self.assertEqual(snapshot["entries"][str(broken)]["target"], "../which/bin/node-which")
+        self.assertEqual(snapshot["entries"][str(loop)]["type"], "link")
+        self.assertNotIn(str(external / "data"), snapshot["entries"])
+        cached.write_bytes(b"new client cache")
+        self.manager().restore(first)
+        self.assertEqual(cached.read_bytes(), b"new client cache")
+        self.assertTrue(broken.is_symlink())
+        self.assertEqual(self.manager().classify(self.home / "plugins/settings.json", [self.home]), "config")
+
+    def test_incidental_skill_links_are_preserved_but_explicit_missing_targets_block(self):
+        target = self.root / "external-skills"
+        target.mkdir()
+        (target / "SKILL.md").write_text("A linked skill")
+        (target / "broken-dependency").symlink_to("missing")
+        (target / "cycle").symlink_to("cycle")
+        self.shared.mkdir()
+        (self.shared / "linked").symlink_to(target)
+        first = self.install()["backup_id"]
+        snapshot = load_snapshot(self.backups, first)
+        self.assertEqual(snapshot["entries"][str(target / "broken-dependency")]["type"], "link")
+        self.assertEqual(snapshot["entries"][str(target / "cycle")]["type"], "link")
+        d = parse(self.input.read_bytes())
+        d["backup"]["additional_config_paths"] = [str(target / "broken-dependency")]
+        with self.assertRaisesRegex(RouterError, "target does not exist"):
+            self.manager().roots(d)
+        config = self.home / "config.toml"
+        config.write_text(config.read_text() + '\n[agents.explicit]\nconfig_file = "' + str(target / "broken-dependency") + '"\n')
+        with self.assertRaisesRegex(RouterError, "reference does not exist"):
+            self.manager().roots(parse(self.input.read_bytes()))
+
     def test_empty_original_config_is_restored_to_absent(self):
         (self.home / "config.toml").unlink()
         (self.home / "AGENTS.md").unlink()

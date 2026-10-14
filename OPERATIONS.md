@@ -81,3 +81,5 @@ Official reference: [Plugin packaging and onboarding](https://developers.openai.
 Setup backs up unfamiliar Codex Home files and leaves them in place. `preserved_paths` is an informational list, not an error. Config restore keeps their current contents, including files added after the backup. Only an explicitly requested full restore rolls them back. Add a path to `additional_config_paths` only when you want it treated as configuration for normal restore.
 
 Regular files are copied and verified. Symlinks are saved as links without following unknown external targets; sockets and other special files are recorded but not recreated. Unreadable or changing data still stops setup before configuration writes. Router ownership, managed-file conflicts and client-exit checks remain enforced.
+
+Plugin cache links are always saved as links, without following their targets. Normal config restore keeps the current plugin cache. Incidental broken or cyclic resource links are preserved too; missing explicitly referenced configuration still requires correction. Another plugin's broken dependency is not a reason to delete its files before Router setup.
