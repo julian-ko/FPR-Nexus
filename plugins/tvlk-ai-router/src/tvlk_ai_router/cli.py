@@ -12,7 +12,7 @@ from .progress import finish_progress
 from .storage import lock, quiet_check, recover
 
 
-HELP = """TVLK-OpenAI-Router — Automatic task routing for Codex
+HELP = """FPR Nexus — Automatic task routing for Codex
 
 Show config     tvlk-ai-router config show
 Validate config tvlk-ai-router config validate
@@ -38,7 +38,7 @@ After changes, reopen Codex and start a new chat. Runtime models still require a
 def parser():
     p = argparse.ArgumentParser(prog="tvlk-ai-router", description=HELP,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--version", action="version", version="TVLK-OpenAI-Router " + __version__)
+    p.add_argument("--version", action="version", version="FPR Nexus " + __version__)
     p.add_argument("--codex-home", help="Target Codex Home; defaults to CODEX_HOME or ~/.codex")
     p.add_argument("--config-dir", help="Unified configuration directory; defaults to ~/.config/tvlk-ai-router")
     p.add_argument("--data-dir", help="State directory; defaults to ~/.local/share/tvlk-ai-router")

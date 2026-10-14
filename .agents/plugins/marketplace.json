@@ -1,6 +1,6 @@
 {
   "name": "tvlk-ai-router",
-  "interface": {"displayName": "TVLK AI Router"},
+  "interface": {"displayName": "FPR Nexus"},
   "plugins": [{
     "name": "tvlk-ai-router",
     "source": {"source": "local", "path": "./plugins/tvlk-ai-router"},

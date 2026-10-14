@@ -1,8 +1,10 @@
 # Validation
 
-Version 1.0.7 · 2026-10-14 · macOS Apple Silicon · Python 3.12.14
+Version 1.0.8 · 2026-10-14 · macOS Apple Silicon · Python 3.12.14
 
 ## Verified
+
+- Version 1.0.8 renames the display name, onboarding and management UI to FPR Nexus. Plugin identity, CLI command, runtime/config/backup paths and legacy migration markers remain unchanged.
 
 - Version 1.0.7 fixes the reported context-mode node-which symlink failure. Plugin cache contents remain in snapshots, but their symlink targets are not followed and config restore preserves the cache. Incidental broken/cyclic links in linked resources are saved as links; missing explicitly referenced configuration still stops setup. Tests cover the exact dependency layout, valid external package links, cycles, linked Skills, explicit missing targets and cache preservation.
 - A read-only preflight on the user's actual Codex Home completed: three snapshot roots, 1,813,798,579 regular-file bytes, and matching model availability. No configuration was written during this check.

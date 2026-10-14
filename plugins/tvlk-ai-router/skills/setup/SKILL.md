@@ -1,9 +1,9 @@
 ---
 name: setup
-description: Set up or upgrade the TVLK router plugin when the user requests installation or runs plugin onboarding. Detect and migrate an older router before activating the plugin.
+description: Set up or upgrade the FPR Nexus plugin when the user requests installation or runs plugin onboarding. Detect and migrate an older router before activating the plugin.
 ---
 
-# Set up TVLK-OpenAI-Router
+# Set up FPR Nexus
 
 Resolve the plugin root from this file at `<root>/skills/setup/SKILL.md`.
 Run `bash "<root>/scripts/chat.sh" setup --open`. The launcher finds a usable Python automatically, including an existing router runtime or the Codex bundled runtime when available. It checks for an existing installation and opens a durable setup file in Terminal. It does not change live Codex settings.

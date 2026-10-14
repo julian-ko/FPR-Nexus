@@ -18,7 +18,7 @@ APP_NAME = "TVLK-OpenAI-Router.app"
 BUNDLE_ID = "com.traveloka.tvlk-openai-router"
 ACTIONS = {"apply", "enable", "disable", "restore", "recover"}
 CHAT_HELP = {
-    "title": "TVLK-OpenAI-Router · Chat management",
+    "title": "FPR Nexus · Chat management",
     "usage": "Enter these commands in local Codex chat, or use $tvlk-ai-router help explicitly. No terminal is needed.",
     "commands": ["tvlk-ai-router help", "tvlk-ai-router config show", "tvlk-ai-router status",
                  "tvlk-ai-router backup list", "tvlk-ai-router disable", "tvlk-ai-router enable",
@@ -236,7 +236,7 @@ def perform_request(m, ident):
 
 def dispatch(args):
     if os.environ.get("TVLK_ROUTER_SHELL_ROOT"):
-        CHAT_HELP["title"] = "TVLK-OpenAI-Router · Plugin chat management"
+        CHAT_HELP["title"] = "FPR Nexus · Plugin chat management"
         CHAT_HELP["usage"] = "Read-only commands run in local Codex chat. Changes require a Terminal command after quitting Codex."
         CHAT_HELP["changes"] = "A change returns a quoted bash manage.sh command. Quit Codex/ChatGPT, then run it in Terminal. Pending means no configuration change has been applied."
         CHAT_HELP["setup"] = "Enter tvlk-ai-router setup to open the setup window. It checks and migrates old installations before applying plugin settings."

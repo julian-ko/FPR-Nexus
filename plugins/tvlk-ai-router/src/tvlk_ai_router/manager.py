@@ -210,7 +210,7 @@ class Manager:
         return issues
 
     def show(self):
-        result = {"tool": "TVLK-OpenAI-Router", "version": __version__,
+        result = {"tool": "FPR Nexus", "version": __version__,
                   "status": self.state["status"] if self.state else "not_installed",
                   "codex_home": str(self.home), "config_file": str(self.source),
                   "backup_directory": str(self.store()), "baseline": self.state.get("baseline") if self.state else None,

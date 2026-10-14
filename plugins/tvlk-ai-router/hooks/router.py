@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 
-def context(payload, runtime, version="1.0.7"):
+def context(payload, runtime, version="1.0.8"):
     event = payload.get("hook_event_name")
     if event not in ("SessionStart", "UserPromptSubmit"):
         return None

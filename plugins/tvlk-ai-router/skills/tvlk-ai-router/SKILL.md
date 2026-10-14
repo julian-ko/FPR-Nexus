@@ -1,9 +1,9 @@
 ---
 name: tvlk-ai-router
-description: Set up and manage the TVLK router plugin in local Codex. Use for router setup, help, configuration, usage review, enable, disable, backups and restore. Ordinary writing and coding do not trigger this management skill.
+description: Set up and manage the FPR Nexus plugin in local Codex. Use for router setup, help, configuration, usage review, enable, disable, backups and restore. Ordinary writing and coding do not trigger this management skill.
 ---
 
-# TVLK router plugin
+# FPR Nexus plugin
 
 Resolve the plugin root from this loaded skill's absolute path: it is two directories above the `skills/tvlk-ai-router` directory. Invoke `bash "<absolute-plugin-root>/scripts/chat.sh" <arguments>` with local execution tools, substituting the resolved path. Do not assume `PLUGIN_ROOT` is exported in a normal shell tool; that variable is provided to plugin hooks.
 
