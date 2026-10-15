@@ -1,5 +1,6 @@
 """Read local execution journals without exporting messages or creating files."""
 import json
+import hashlib
 import re
 from collections import Counter
 from datetime import datetime, timedelta, timezone
@@ -42,13 +43,15 @@ def usage(value):
     return {k: value.get(k) if type(value.get(k)) is int and value[k] >= 0 else None for k in FIELDS}
 
 
-def review(home, state, period="7d", now=None):
+def review(home, state, period="7d", now=None, *, paths=None, include_events=False):
     now = now or datetime.now(timezone.utc)
     start = installation_start(state)
     if period == "since-install":
         since = timestamp(start["at"])
         if since is None:
             raise RouterError("Installation start is unknown; use review 7d or review 30d", 4)
+    elif period == "all":
+        since = datetime(1970, 1, 1, tzinfo=timezone.utc)
     elif period in ("7d", "30d"):
         since = now - timedelta(days=int(period[:-1]))
     else:
@@ -56,8 +59,10 @@ def review(home, state, period="7d", now=None):
     counts = Counter()
     turns, seen_events = {}, set()
     parents = set()
-    paths = []
-    for directory in (home / "sessions", home / "archived_sessions"):
+    events = []
+    supplied_paths = paths is not None
+    paths = list(paths or [])
+    for directory in (() if supplied_paths else (home / "sessions", home / "archived_sessions")):
         if directory.is_symlink():
             counts["unreadable_files"] += 1
             continue
@@ -196,6 +201,12 @@ def review(home, state, period="7d", now=None):
                     if duplicate or inherited or not in_range:
                         continue
                     row = turns.get(identity)
+                    if include_events and row:
+                        events.append({"id": hashlib.sha256(json.dumps(signature).encode()).hexdigest(),
+                            "date": at.isoformat(), "thread_id": identity[0], "turn_id": active,
+                            "model": current_context[0] or "unknown", "reasoning_effort": current_context[1] or "unknown",
+                            "category": row["category"], "tokens": delta,
+                            "speed": context.get("service_tier", "unknown")})
                     if delta is None or row is None or not current_context[0]:
                         counts["unknown_token_events"] += 1
                         if row:
@@ -232,10 +243,13 @@ def review(home, state, period="7d", now=None):
     known = sum(row["tokens"]["total_tokens"] or 0 for row in models.values())
     for row in models.values():
         row["token_share"] = round(row["tokens"]["total_tokens"] / known, 4) if known and row["tokens"]["total_tokens"] is not None else None
-    return {"period": period, "from": since.isoformat(), "to": now.isoformat(), "installation_start": start,
+    result = {"period": period, "from": since.isoformat(), "to": now.isoformat(), "installation_start": start,
         "execution_turns": len(details), "observed_total_tokens": known, "models": list(models.values()), "details": details[-100:], "details_omitted": max(0, len(details) - 100),
         "coverage": {**{k: counts[k] for k in ("journal_files", "malformed_lines", "unknown_token_events", "excluded_inherited_events", "excluded_system_sessions", "unknown_history_sessions", "unreadable_files")}, "scope": "Local retained sessions and archived_sessions only; all models, including non-router sessions.",
             "notes": ["Categories come from recorded agent roles, not question meaning.", "Execution turns are not user questions or API calls.",
                 "Token shares use observed tokens only; missing, reset and model-boundary deltas are excluded.",
                 "A turn using multiple models appears in each model row; overall turns are deduplicated.",
                 "Cached input is part of input; reasoning output is part of output. These are not costs or account quota."]}}
+    if include_events:
+        result.update(events=events, turns=details, parent_links=sorted(parents))
+    return result

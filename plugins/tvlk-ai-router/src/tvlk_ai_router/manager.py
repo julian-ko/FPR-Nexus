@@ -327,6 +327,12 @@ class Manager:
         return edits, next_state
 
     def change(self, action, file=None, dry=False, migrate_english=False):
+        if action in ("install", "apply", "enable") and not dry:
+            from .updates import require_supported
+            try:
+                require_supported(self.data.parent / "fpr-nexus-history")
+            except ValueError as exc:
+                raise RouterError(str(exc), 4) from exc
         progress("preflight", "Validating configuration and managed file ownership")
         if action == "install" and self.state:
             if file and self.source.exists() and read(Path(file).absolute()) != read(self.source):

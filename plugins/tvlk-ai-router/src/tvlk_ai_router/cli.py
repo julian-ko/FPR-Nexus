@@ -1,7 +1,8 @@
-"""CLI entry point. No writes occur until a mutating command is selected."""
+"""CLI entry point. Review retains statistics without changing Codex settings."""
 import argparse
 import json
 import os
+import sqlite3
 import sys
 from importlib.resources import files
 
@@ -26,6 +27,10 @@ Restore config  tvlk-ai-router restore <backup-id>
 Recover writes  tvlk-ai-router recover
 Show help       tvlk-ai-router help
 Usage review    tvlk-ai-router review [7d|30d|since-install]
+Filter usage    tvlk-ai-router review all --scope nexus --group-by task
+Date range      tvlk-ai-router review --from 2026-10-01 --to 2026-10-15 --group-by date
+Check updates   tvlk-ai-router update check  (plugin chat launcher)
+Prepare update  tvlk-ai-router update prepare  (refresh plugin first)
 
 Mutating commands support --dry-run; configuration views support --json.
 Restore defaults to configuration only. restore --scope full also rolls back chat history and worktrees.
@@ -33,6 +38,20 @@ Enter management commands in Codex chat; the Skill invokes the local program.
 Chat changes return a pending request and a Terminal command. Quit Codex/ChatGPT, then run that command.
 After changes, reopen Codex and start a new chat. Runtime models still require a real-session check.
 """
+
+
+def review_options(command):
+    command.add_argument("period", nargs="?", default="7d", choices=("7d", "30d", "since-install", "all"))
+    command.add_argument("--scope", choices=("all", "nexus"), default="all")
+    command.add_argument("--group-by", choices=("date", "model", "task"), default="model")
+    command.add_argument("--from", dest="since", help="Inclusive UTC date, YYYY-MM-DD")
+    command.add_argument("--to", dest="until", help="Inclusive UTC date, YYYY-MM-DD")
+    command.add_argument("--json", action="store_true")
+
+
+def usage_report(manager, args):
+    from .history import report
+    return report(manager, args.period, args.scope, args.group_by, args.since, args.until)
 
 
 def parser():
@@ -49,8 +68,7 @@ def parser():
     shell_install.add_argument("--config")
     shell_install.set_defaults(dry_run=False, json=False)
     review = sub.add_parser("review")
-    review.add_argument("period", nargs="?", default="7d", choices=("7d", "30d", "since-install"))
-    review.add_argument("--json", action="store_true")
+    review_options(review)
     for name in ("install", "apply", "disable", "enable", "restore", "recover"):
         c = sub.add_parser(name)
         c.add_argument("--dry-run", action="store_true")
@@ -73,7 +91,7 @@ def parser():
         chat_sub.add_parser(name)
     req = chat_sub.add_parser("request")
     review = chat_sub.add_parser("review")
-    review.add_argument("period", nargs="?", default="7d", choices=("7d", "30d", "since-install"))
+    review_options(review)
     req.add_argument("action", choices=("apply", "enable", "disable", "restore", "recover"))
     req.add_argument("--backup-id")
     req.add_argument("--scope", choices=("config", "full"), default="config")
@@ -126,8 +144,7 @@ def main(argv=None):
             migrate(os.environ["TVLK_ROUTER_SHELL_ROOT"])
         m = Manager(args.codex_home, args.config_dir, args.data_dir, args.agents_home)
         if args.command == "review":
-            from .usage import review
-            display(review(m.home, m.state, args.period), args.json)
+            display(usage_report(m, args), args.json)
             return 0
         if args.command == "config":
             if args.operation == "show":
@@ -174,7 +191,7 @@ def main(argv=None):
         finish_progress()
         print(json.dumps({"error": str(exc), "exit_code": exc.code}, ensure_ascii=False) if getattr(args, "json", False) else "Error: " + str(exc), file=sys.stderr)
         return exc.code
-    except (OSError, ValueError, KeyError, TypeError) as exc:
+    except (OSError, ValueError, KeyError, TypeError, sqlite3.Error) as exc:
         finish_progress()
         # Avoid raw tracebacks or configuration contents in ordinary command output.
         print("Error: Cannot safely process local files: " + str(exc), file=sys.stderr)

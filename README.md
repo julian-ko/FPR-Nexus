@@ -1,6 +1,6 @@
 # FPR Nexus
 
-Version 1.0.8 · Personal Codex plugin · macOS
+Version 1.1.0 · Personal Codex plugin · macOS
 
 Formerly TVLK-OpenAI-Router. Existing installations keep the same plugin identity, `tvlk-ai-router` commands, settings and backups.
 
@@ -54,8 +54,10 @@ tvlk-ai-router restore <backup-id>
 tvlk-ai-router review since-install
 ```
 
-Usage review reads retained local sessions, including non-router sessions. Cached input is included in input; reasoning is included in output. These are local usage records, not bills or account quotas. Missing data and unknown task types remain visible.
+Usage review keeps local statistics outside the plugin, with no automatic expiry. Choose all local usage or the Nexus subset; group by date, model or task. Credits are estimated with the public Standard rate card, not a company invoice or subscription quota. Missing data and unknown task types remain visible. No usage is uploaded.
 
-The repository is private: teammates need read access and GitHub authentication. This plugin requires local tools; ordinary ChatGPT cloud chats cannot control local model settings.
+Version checks read a small public policy file. Refresh the plugin in Codex, then enter `tvlk-ai-router update prepare` to open the existing safe setup flow. A minimum-version policy limits Nexus entry points; it does not control direct Codex use. Existing 1.0.8 users need one normal upgrade before these checks exist.
+
+The repository is public. This plugin requires local tools; ordinary ChatGPT cloud chats cannot control local model settings.
 
 [Commands, updates and recovery](OPERATIONS.md) · [Validation](VALIDATION.md) · [Third-party notices](plugins/tvlk-ai-router/THIRD-PARTY.md)

@@ -2,6 +2,12 @@
 set -euo pipefail
 plugin_directory=$(cd -- "$(dirname -- "$0")/.." && pwd)
 plugin_runtime="$HOME/.local/share/tvlk-ai-router-plugin/runtime"
+if [[ "${1:-}" == "update" ]]; then
+  shift
+  source "$plugin_directory/scripts/python.sh"
+  installer_python=$(tvlk_find_python "${TVLK_ROUTER_PYTHON:-}")
+  exec "$installer_python" -I "$plugin_directory/scripts/update.py" "$@"
+fi
 if [[ "${1:-}" == "setup" ]]; then
   shift
   installer_python=${TVLK_ROUTER_PYTHON:-}
@@ -16,7 +22,7 @@ if [[ "${1:-}" == "setup" ]]; then
   exec "$installer_python" -I "$plugin_directory/scripts/setup.py" "$@"
 fi
 [[ -x "$plugin_runtime/tvlk-ai-router" ]] || { echo 'Setup is required. Invoke tvlk-ai-router setup first.' >&2; exit 4; }
-[[ "$("$plugin_runtime/tvlk-ai-router" --version)" == 'FPR Nexus 1.0.8' ]] || { echo 'The cached plugin and installed runtime versions differ. Run setup to update the runtime. The durable recovery command remains available.' >&2; exit 4; }
+[[ "$("$plugin_runtime/tvlk-ai-router" --version)" == 'FPR Nexus 1.1.0' ]] || { echo 'The cached plugin and installed runtime versions differ. Run setup to update the runtime. The durable recovery command remains available.' >&2; exit 4; }
 [[ $# -gt 0 ]] || set -- help
 case "$1" in
   config)

@@ -23,7 +23,10 @@ CHAT_HELP = {
     "commands": ["tvlk-ai-router help", "tvlk-ai-router config show", "tvlk-ai-router status",
                  "tvlk-ai-router backup list", "tvlk-ai-router disable", "tvlk-ai-router enable",
                  "tvlk-ai-router apply", "tvlk-ai-router restore <backup-id>",
-                 "tvlk-ai-router review", "tvlk-ai-router review 30d", "tvlk-ai-router review since-install"],
+                 "tvlk-ai-router review", "tvlk-ai-router review 30d", "tvlk-ai-router review since-install",
+                 "tvlk-ai-router review all --scope nexus --group-by task",
+                 "tvlk-ai-router review --from 2026-10-01 --to 2026-10-15 --group-by date",
+                 "tvlk-ai-router update check", "tvlk-ai-router update prepare"],
     "changes": "Change requests open the local management window. Quit Codex, then click Run. Pending means the change has not been applied.",
     "scope": "Requires Codex chat with local tool access. Ordinary ChatGPT cloud chats cannot control local models or configuration.",
 }
@@ -139,6 +142,12 @@ def bootstrap(source_app, m=None):
 def queue_request(m, action, backup_id=None, scope="config"):
     if action not in ACTIONS or scope not in ("config", "full"):
         raise RouterError("Unsupported chat management action")
+    if action in ("apply", "enable"):
+        from .updates import require_supported
+        try:
+            require_supported(m.data.parent / "fpr-nexus-history")
+        except ValueError as exc:
+            raise RouterError(str(exc), 4) from exc
     if action == "restore":
         if not backup_id:
             raise RouterError("Restore requires an explicit backup-id; list backups first")
@@ -256,10 +265,11 @@ def dispatch(args):
     if args.operation == "show":
         return m.show()
     if args.operation == "review":
-        from .usage import review
-        return review(m.home, m.state, args.period)
+        from .cli import usage_report
+        return usage_report(m, args)
     if args.operation == "status":
-        return {**m.show(), "pending_request": request_status(m)}
+        from .updates import check
+        return {**m.show(), "pending_request": request_status(m), "version_policy": check(m.data.parent / "fpr-nexus-history")}
     if args.operation == "backups":
         return m.backups()
     if args.operation == "cancel":

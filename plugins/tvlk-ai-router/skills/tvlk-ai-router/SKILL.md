@@ -15,6 +15,11 @@ Resolve the plugin root from this loaded skill's absolute path: it is two direct
 | validate / export configuration | `config validate` / `config example` |
 | status | `status` |
 | usage | `review` / `review 30d` / `review since-install` |
+| Nexus usage by task | `review all --scope nexus --group-by task` |
+| usage by date / model | `review 30d --group-by date` / `review 30d --group-by model` |
+| custom UTC dates | `review --from YYYY-MM-DD --to YYYY-MM-DD` |
+| version check | `update check` |
+| upgrade after refreshing the plugin | `update prepare` |
 | backups | `backups` |
 | apply / enable / disable | `request apply` / `request enable` / `request disable` |
 | restore selected backup | `request restore --backup-id <id>` |
@@ -26,11 +31,13 @@ Setup detects old installations and opens a setup window. Tell the user to quit 
 
 Unrecognized Codex Home content is backed up and preserved automatically during setup and normal config restore. A preserved_paths report is informational, not a setup error. Do not delete these paths or request manual classification. Unknown old Router leftovers, managed-file conflicts, unreadable backups and active clients remain blocking errors.
 
-For uninstall, first complete disable (or the explicitly selected restore) and verify it. Then use the client's plugin removal capability when the user has requested removal. Keep backups and the durable recovery runtime. Removing plugin files alone does not undo model settings.
+For uninstall, first run `review all` to retain final usage, then complete disable (or the explicitly selected restore) and verify it. Then use the client's plugin removal capability when the user has requested removal. Always keep `~/.local/share/fpr-nexus-history/`, backups and the durable recovery runtime. Removing plugin files alone does not undo model settings. Collection stops after removal; already collected records remain without automatic expiry.
 
 For model changes, show the configuration path and edit only requested router.toml fields before queuing apply. Preserve other settings. Do not edit generated native roles. For restore, require an explicit backup ID; list choices if missing. Default to config scope. Only append `--scope full` for an explicit full-history restore; it rolls back worktrees and chat history.
 
-Review reports local recorded models and role categories without prompts. Turns are not questions or API calls. Keep unknown/partial data and observed-token shares explicit; costs and account quota are outside scope.
+Review updates a local statistics database without changing Codex configuration. Show the requested date/model/task grouping, execution turns, observed input/cache/output tokens, estimated credits, missing/unpriced counts and the largest consumption contributors. Call it a Standard credits estimate using the 2026-10-15 public rate card; company billing and subscription quota are unknown. Never label it an invoice, actual dollar spending, or guaranteed savings. Keep historical rate versions and Standard-speed assumptions visible. High-consumption evidence is not proof of waste. Do not add cache tokens to input or reasoning tokens to output again. `--scope all` means retained local user sessions, not the entire cloud account. `--scope nexus` is a subset proven by roles/parent links; unknown categories must remain unknown. Reports include no prompts or responses.
+
+Version checks fetch only the public version policy, with no usage upload. `update prepare` opens setup only when the loaded plugin package is current. If the package is old, use the host's supported plugin refresh flow, start a new chat to load the updated skill, then retry. Do not edit cached plugin files or trust settings to bypass the check. A required update limits Nexus routing guidance and apply/enable operations; it cannot block direct Codex use. Keep help, review, disable and recovery available. Never claim a setup window waiting for client exit has completed.
 
 Automatic routing is injected by enabled plugin hooks only after successful setup. Native subagents receive no further routing context. Disabling/removing the plugin stops new hook calls; it does not undo installed model/agent configuration or instructions already in an existing chat. For recovery without the plugin, invoke the durable local program under `~/.local/share/tvlk-ai-router-plugin/runtime/tvlk-ai-router` and stage a restore request, then use its returned manage.sh command.
 

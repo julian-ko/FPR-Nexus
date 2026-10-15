@@ -2,10 +2,11 @@
 import json
 import os
 import sys
+import subprocess
 from pathlib import Path
 
 
-def context(payload, runtime, version="1.0.8"):
+def context(payload, runtime, version="1.1.0"):
     event = payload.get("hook_event_name")
     if event not in ("SessionStart", "UserPromptSubmit"):
         return None
@@ -44,7 +45,14 @@ def context(payload, runtime, version="1.0.8"):
     raw, config = manager.config()
     if digest(raw) != state.get("applied_config_hash") or manager.drift():
         return None
+    from tvlk_ai_router.updates import check
+    policy = check(manager.data.parent / "fpr-nexus-history")
+    if policy["status"] == "required":
+        return {"hookSpecificOutput": {"hookEventName": event, "additionalContext":
+                "FPR Nexus requires an upgrade. Do not initiate Nexus automatic routing. Tell the user to refresh FPR Nexus in Codex and run tvlk-ai-router update prepare. Direct Codex use and recovery remain available."}}
     text = routing_block(config)
+    if policy["status"] in ("available", "scheduled") and event == "SessionStart":
+        text += "\nFPR Nexus update " + policy["latest"] + " is available. Mention tvlk-ai-router update check to the user."
     return {"hookSpecificOutput": {"hookEventName": event, "additionalContext": text}}
 
 
@@ -52,9 +60,18 @@ def main():
     try:
         payload = json.load(sys.stdin)
         runtime = Path.home() / ".local/share/tvlk-ai-router-plugin/runtime"
+        event = payload.get("hook_event_name")
+        if event in ("SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"):
+            try:
+                subprocess.Popen([str(runtime / ".venv/bin/python"), "-I", str(Path(__file__).resolve().parents[1] / "scripts/collect.py"), *(["--final"] if event in ("Stop", "SessionEnd") else [])],
+                                 stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+            except OSError:
+                pass
         value = context(payload, runtime)
         if value:
             print(json.dumps(value))
+        elif event == "Stop":
+            print("{}")
     except Exception:
         pass
     return 0

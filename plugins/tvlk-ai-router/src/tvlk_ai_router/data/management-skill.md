@@ -26,6 +26,6 @@ For restore, list backups and ask for an explicit backup ID if absent. Default t
 
 For model edits, use show to find router.toml, edit only the requested fields, then queue apply. Do not change generated agent files. Preserve other configuration and clarify unspecified settings.
 
-For review, show recorded models, roles and coverage without prompts. Turns are not questions or API calls. Missing tokens remain unknown; shares cover observed local tokens only. A multi-model turn counts once overall. Local usage can include manual sessions; costs and account quota are outside scope.
+Review stores statistics in `~/.local/share/fpr-nexus-history/`, outside the plugin and configuration backups. Preserve this directory during uninstall and recovery. Show observed tokens, Standard credits estimates, unknown prices, missing data and coverage. These estimates are not bills or account quota. Cache is part of input and reasoning is part of output. Use `--scope all|nexus`, `--group-by date|model|task`, and optional `--from YYYY-MM-DD --to YYYY-MM-DD` after the review period. Roles describe executors, not inferred question meaning. Run review before uninstall to retain final usage; collection stops when the plugin is removed.
 
 Local tool/file access is required. Ordinary ChatGPT cloud cannot run this local tool or switch its model. Report unavailable execution honestly. There is no registered native slash command; `$tvlk-ai-router help` can explicitly invoke this skill.

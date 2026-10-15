@@ -1,8 +1,12 @@
 # Validation
 
-Version 1.0.8 · 2026-10-14 · macOS Apple Silicon · Python 3.12.14
+Version 1.1.0 · 2026-10-15 · macOS Apple Silicon · Python 3.12.14
 
 ## Verified
+
+- 1.1.0 adds a separate SQLite usage ledger, changed-file import, all/Nexus scopes, UTC date/model/task groups and versioned Standard credits estimates. Tests cover repeated imports/copies, deleted source logs, absent install state after removal, persisted rate versions, missing cache splits, nonstandard speeds, unknown prices, parent-turn attribution and path safety. Fixture prompt content is not stored.
+- Version policy tests cover semantic version ordering, deadlines, unavailable network, cached required policy, size/schema validation and symlink rejection. The policy contains data only; no server-selected code is downloaded or executed. The update command opens setup from the host-installed package after version checks.
+- 140 automated test runs pass, including the existing installer suite and new ledger/policy tests. New coverage verifies that a required update still permits disable, baseline restore and history review, and that update preparation refuses an old package and propagates setup failure. The final history changes also passed their focused suite. Earlier installation checks below are historical evidence, not a claim that 1.1.0 was installed on the live user account.
 
 - Version 1.0.8 renames the display name, onboarding and management UI to FPR Nexus. Plugin identity, CLI command, runtime/config/backup paths and legacy migration markers remain unchanged.
 
@@ -37,3 +41,5 @@ The CLI check proves marketplace discovery and cache installation. It does not p
 Setup needs a usable Python 3.11+ interpreter with venv and ensurepip. It checks existing installations and the Codex bundled path when available; it does not download Python. The private environment depends on that interpreter, so removing its base Python can break it. Bundled runtime availability and location may differ on other clients; setup also accepts an explicit approved path. Other operating systems, Intel Macs and organizational policy combinations were not tested.
 
 The plugin host installs plugin files before onboarding. Legacy removal happens during setup, before native plugin settings are applied. Removing the plugin alone does not undo model configuration; use disable or restore first. Local usage review is not billing or account-quota measurement.
+
+1.1.0 has not been installed into the user's running client or a teammate's account in this change. The new Stop/SessionEnd collection hooks need host trust and a target-client check. Background collection is best-effort; deleted-before-collection data is unrecoverable. Public Standard credits are estimates with explicit assumptions, not company billing. No usage upload endpoint or company-wide mandatory update mechanism was implemented. The public version-policy endpoint must be deployed with the repository release before live checks can succeed. A GitHub source release does not itself update a separately saved workspace plugin.

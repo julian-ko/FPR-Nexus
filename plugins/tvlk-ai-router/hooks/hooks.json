@@ -1,6 +1,8 @@
 {
   "hooks": {
     "SessionStart": [{"hooks": [{"type": "command", "command": "bash \"${PLUGIN_ROOT}/hooks/router.sh\"", "statusMessage": "Loading router rules"}]}],
-    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "bash \"${PLUGIN_ROOT}/hooks/router.sh\"", "statusMessage": "Checking router rules"}]}]
+    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "bash \"${PLUGIN_ROOT}/hooks/router.sh\"", "statusMessage": "Checking router rules"}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": "bash \"${PLUGIN_ROOT}/hooks/router.sh\"", "statusMessage": "Saving local usage"}]}],
+    "SessionEnd": [{"hooks": [{"type": "command", "command": "bash \"${PLUGIN_ROOT}/hooks/router.sh\"", "timeout": 3}]}]
   }
 }

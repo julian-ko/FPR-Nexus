@@ -85,6 +85,27 @@ class PluginTests(unittest.TestCase):
         m.change("disable")
         self.assertIsNone(hook.context(self.payload(), self.runtime))
 
+    def test_required_upgrade_keeps_disable_restore_and_history_available(self):
+        from tvlk_ai_router.history import report
+        baseline = self.install()["backup_id"]
+        m = self.fixture.manager()
+        result = report(m)
+        history = Path(result["history_file"])
+        policy = {"schema": 1, "latest": "99.0.0", "minimum_supported": "99.0.0", "upgrade_deadline": None,
+                  "published_at": "2026-10-15T00:00:00Z"}
+        (history.parent / "version-policy.json").write_text(json.dumps({"checked_at": "2026-10-15T00:00:00Z", "policy": policy}))
+        text = hook.context(self.payload(), self.runtime)["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("requires an upgrade", text)
+        self.assertNotIn("tvlk_ai_route_coding", text)
+        with self.assertRaisesRegex(RouterError, "upgrade required"):
+            m.change("apply")
+        with self.assertRaisesRegex(RouterError, "upgrade required"):
+            queue_request(m, "apply")
+        m.change("disable")
+        m.restore(baseline)
+        self.assertTrue(history.is_file())
+        self.assertIn("groups", report(self.fixture.manager()))
+
     def test_absent_global_instructions_remain_absent_through_lifecycle(self):
         instruction = self.fixture.home / "AGENTS.md"
         instruction.unlink()

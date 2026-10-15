@@ -14,8 +14,13 @@
 | `tvlk-ai-router backup list` | List and verify snapshots |
 | `tvlk-ai-router restore <backup-id>` | Restore selected configuration |
 | `tvlk-ai-router review since-install` | Local model and task-type usage |
+| `tvlk-ai-router review all --scope nexus --group-by task` | Nexus-only task usage and estimated credits |
+| `tvlk-ai-router review 30d --group-by date` | Daily totals in UTC |
+| `tvlk-ai-router review --from 2026-10-01 --to 2026-10-15 --group-by model` | Model totals for an inclusive UTC date range |
+| `tvlk-ai-router update check` | Fetch the public version policy; no usage upload |
+| `tvlk-ai-router update prepare` | Open safe setup after refreshing the plugin in Codex |
 
-Review also accepts 7d and 30d. Read-only commands run in chat. Apply, enable, disable and restore return a pending request and a recovery command. Quit the clients before executing it. Pending is not completed. Full-history restore requires an explicit request; normal restore covers configuration.
+Review accepts 7d, 30d, since-install and all. It imports statistics into a durable local database without changing Codex settings. Other inspection commands run directly in chat. Apply, enable, disable and restore return a pending request and a recovery command. Quit the clients before executing it. Pending is not completed. Full-history restore requires an explicit request; normal restore covers configuration.
 
 ## Migration
 
@@ -36,6 +41,8 @@ Historical App/Shell snapshots remain usable. Restoring one does not recreate th
 | `~/.local/share/tvlk-ai-router-plugin/runtime/` | Private environment and recovery program |
 | `~/.local/share/tvlk-ai-router-plugin/setup/` | Durable setup files |
 | `~/.local/share/tvlk-ai-router-plugin/legacy/` | Inactive old program and Skill |
+| `~/.local/share/fpr-nexus-history/usage.sqlite3` | Permanent collected statistics; kept after plugin removal |
+| `~/.local/share/fpr-nexus-history/version-policy.json` | Last successfully fetched version policy |
 | `~/.codex/agents/` | Generated native agents |
 
 Backups may use a custom path. Migration accepts the original CODEX_HOME with standard router/shared directories; unexpected custom targets require recovery review.
@@ -51,9 +58,29 @@ codex plugin add tvlk-ai-router@tvlk-ai-router
 
 Restart and review changed hooks. Setup preserves your model choices and original backup baseline.
 
+Since 1.1.0, `update check` reads `releases/policy.json` from this repository's main branch. `latest` is the available version; `minimum_supported` is the version required after `upgrade_deadline` (UTC). A null deadline applies the minimum immediately. Never raise the minimum before its package is available. The initial policy advertises 1.1.0 and keeps 1.0.8 supported; no deadline has been imposed on teammates.
+
+Background checks reuse a six-hour cache. A failed fetch keeps the last known policy and marks it stale; a client with no known policy reports unknown and continues. Explicit `update check` retries immediately. Old 1.0.8 installations have no policy reader and need one normal upgrade first.
+
+`update prepare` does not download or execute code named by the server. It checks the already-installed plugin package, then opens its existing setup window. If the host package is old, refresh it using Codex's supported flow first. Git marketplace refresh and workspace Plugin Creator releases are separate distribution channels. Copying a new runtime alone does not refresh host skills or hooks. Setup still waits for all clients, verifies backups and managed ownership, and restores the previous runtime source if installation fails.
+
+A required policy suppresses Nexus routing guidance and blocks install/apply/enable through the managed runtime. Review, help, disable and restore remain available. It does not revoke native model settings, erase old chat instructions, prevent direct Codex use, or stop a user from disabling this personal plugin. Company-wide mandatory enforcement requires managed devices/services.
+
+## Usage and estimates
+
+Hooks schedule local collection at session start, prompts, turn completion and session end. Startup/prompt collection is throttled to five minutes; final collection bypasses that delay. Only changed journals are parsed. `review` also synchronizes before reporting, including all still-readable history on first import. Hook collection is best-effort; disabled/untrusted hooks, crashes and deleted-before-collection logs can leave gaps. Run `review all` before removal to capture final usage.
+
+The ledger retains statistics indefinitely outside plugin/cache/backup roots. Uninstall and config/full restore do not delete it. It stores no prompts, code, replies or tool output. Removal stops collection; it does not collect new activity while uninstalled. A future installation reuses the existing ledger. Keep a personal backup of this directory if disk/device loss must be covered.
+
+All means retained local user sessions, excluding system sessions and unidentifiable inherited history. Nexus is a subset proved by the four custom agent roles and their parent-turn links; unknown is not proof of non-Nexus. Task groups describe recorded roles, not a semantic classification of every question. Date groups use usage-event UTC dates, including turns crossing midnight.
+
+Estimated credits use the public Standard input/cached-input/output rates verified on 2026-10-15: [official rate card](https://learn.chatgpt.com/docs/pricing). Company billing is unknown. Cache is subtracted from input before applying the uncached rate; reasoning is already part of output. Unknown model prices, cache splits and explicit nonstandard speeds remain unpriced. Missing speed assumes Standard and is counted separately. No dollar conversion, tool charge, contract discount or subscription quota inference is made.
+
+Historical imports use this default rate card as an estimate, not the historical invoice. Each event retains its original price version and estimate. Later releases do not silently reprice saved data. The report identifies unpriced events, partial turns, missing fields, turns without observations, rate versions and coverage gaps. High-consumption evidence identifies cached/repeated input and output-heavy turns; it does not prove waste or quality. Token totals and credits describe observed data only. Server usage upload is not implemented.
+
 ## Remove
 
-Complete router disable or the selected restore, then uninstall the plugin in the client. Removing plugin files alone stops future hooks but leaves native settings. Start a new chat; old chats can retain earlier instructions.
+Run `review all`, complete router disable or the selected restore, then uninstall the plugin in the client. Always keep `~/.local/share/fpr-nexus-history/`. Removing plugin files alone stops future hooks but leaves native settings. Start a new chat; old chats can retain earlier instructions.
 
 If the plugin was removed first, recovery remains available:
 
