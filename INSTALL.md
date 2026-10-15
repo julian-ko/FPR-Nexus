@@ -4,7 +4,7 @@ Requires local Codex on macOS and access to this private GitHub repo. Setup auto
 
 1. In Codex, send:
 
-   > Install the plugin from https://github.com/julian-ko/TVLK-OpenAI-Router and run its setup. Replace my old router safely and keep my settings and backups.
+   > Install FPR Nexus from https://github.com/julian-ko/FPR-Nexus and run its setup. Replace my old router safely and keep my settings and backups.
 
 2. Run the plugin's **Set up** action, or enter `tvlk-ai-router setup` in a new chat. Review and trust its hooks when prompted.
 

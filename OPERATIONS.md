@@ -68,7 +68,7 @@ Request disable or restore and follow its returned command with clients closed. 
 For clients with the plugin CLI:
 
 ```sh
-codex plugin marketplace add https://github.com/julian-ko/TVLK-OpenAI-Router
+codex plugin marketplace add https://github.com/julian-ko/FPR-Nexus
 codex plugin add tvlk-ai-router@tvlk-ai-router
 ```
 
