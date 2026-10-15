@@ -49,6 +49,20 @@ def review_options(command):
     command.add_argument("--json", action="store_true")
 
 
+def route_options(command):
+    from .routing import TASKS, MODES, REASONS
+    command.add_argument("--transcript", required=True)
+    command.add_argument("--session-id", required=True)
+    command.add_argument("--category", choices=TASKS, required=True)
+    command.add_argument("--mode", choices=MODES, required=True)
+    command.add_argument("--reason", choices=REASONS, required=True)
+
+
+def route_record(manager, args):
+    from .routing import record_route
+    return record_route(manager, args.transcript, args.session_id, args.category, args.mode, args.reason)
+
+
 def usage_report(manager, args):
     from .history import report
     return report(manager, args.period, args.scope, args.group_by, args.since, args.until)
@@ -69,6 +83,7 @@ def parser():
     shell_install.set_defaults(dry_run=False, json=False)
     review = sub.add_parser("review")
     review_options(review)
+    route_options(sub.add_parser("record-route", help="Record a routing choice for the active local turn"))
     for name in ("install", "apply", "disable", "enable", "restore", "recover"):
         c = sub.add_parser(name)
         c.add_argument("--dry-run", action="store_true")
@@ -92,6 +107,7 @@ def parser():
     req = chat_sub.add_parser("request")
     review = chat_sub.add_parser("review")
     review_options(review)
+    route_options(chat_sub.add_parser("record-route"))
     req.add_argument("action", choices=("apply", "enable", "disable", "restore", "recover"))
     req.add_argument("--backup-id")
     req.add_argument("--scope", choices=("config", "full"), default="config")
@@ -137,14 +153,27 @@ def main(argv=None):
     try:
         if args.command in ("chat", "desktop"):
             from .desktop import dispatch
-            display(dispatch(args), machine=True)
+            result = dispatch(args)
+            if args.command == "chat" and args.operation == "review" and not args.json:
+                from .review_text import render
+                print(render(result))
+            else:
+                display(result, machine=True)
             return 0
         if args.command == "shell-install" and os.environ.get("TVLK_ROUTER_BACKEND") == "plugin":
             from .migration import migrate
             migrate(os.environ["TVLK_ROUTER_SHELL_ROOT"])
         m = Manager(args.codex_home, args.config_dir, args.data_dir, args.agents_home)
+        if args.command == "record-route":
+            display(route_record(m, args), machine=True)
+            return 0
         if args.command == "review":
-            display(usage_report(m, args), args.json)
+            result = usage_report(m, args)
+            if args.json:
+                display(result, True)
+            else:
+                from .review_text import render
+                print(render(result))
             return 0
         if args.command == "config":
             if args.operation == "show":

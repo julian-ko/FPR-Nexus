@@ -267,6 +267,9 @@ def dispatch(args):
     if args.operation == "review":
         from .cli import usage_report
         return usage_report(m, args)
+    if args.operation == "record-route":
+        from .cli import route_record
+        return route_record(m, args)
     if args.operation == "status":
         from .updates import check
         return {**m.show(), "pending_request": request_status(m), "version_policy": check(m.data.parent / "fpr-nexus-history")}

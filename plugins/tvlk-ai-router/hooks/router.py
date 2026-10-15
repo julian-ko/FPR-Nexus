@@ -3,10 +3,11 @@ import json
 import os
 import sys
 import subprocess
+import shlex
 from pathlib import Path
 
 
-def context(payload, runtime, version="1.1.0"):
+def context(payload, runtime, version="1.2.0"):
     event = payload.get("hook_event_name")
     if event not in ("SessionStart", "UserPromptSubmit"):
         return None
@@ -51,6 +52,15 @@ def context(payload, runtime, version="1.1.0"):
         return {"hookSpecificOutput": {"hookEventName": event, "additionalContext":
                 "FPR Nexus requires an upgrade. Do not initiate Nexus automatic routing. Tell the user to refresh FPR Nexus in Codex and run tvlk-ai-router update prepare. Direct Codex use and recovery remain available."}}
     text = routing_block(config)
+    recorder = shlex.join([str(runtime / "tvlk-ai-router"), "chat", "record-route",
+                          "--transcript", str(transcript), "--session-id", meta["id"]])
+    text += ("\nBefore substantive work, record the routing choice once for the current turn using local execution tools: "
+             + recorder + " --category <coding|writing|product|analysis|unknown> --mode <delegated|direct> "
+             "--reason <code_change|text_edit|product_design|complex_analysis|user_choice|simple_task|mixed_task|management|unknown>. "
+             "Choose from the current request, not the model name. Use direct for work you perform yourself, including management. "
+             "This saves only IDs and fixed labels locally. A changed choice may be recorded again; identical retries are deduplicated. "
+             "Never record raw prompts or a free-text reason. Selection does not prove execution; child roles and parent links are collected separately. "
+             "If recording fails, do not invent a turn ID, retry in a loop or block the task; state that attribution is missing.\n")
     if policy["status"] in ("available", "scheduled") and event == "SessionStart":
         text += "\nFPR Nexus update " + policy["latest"] + " is available. Mention tvlk-ai-router update check to the user."
     return {"hookSpecificOutput": {"hookEventName": event, "additionalContext": text}}

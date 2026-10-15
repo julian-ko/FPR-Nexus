@@ -160,6 +160,14 @@ def review(home, state, period="7d", now=None, *, paths=None, include_events=Fal
                         row = turns.setdefault(identity, {"date": at.isoformat(), "thread_id": identity[0], "turn_id": active,
                             "model": "unknown", "reasoning_effort": "unknown", "category": ROLES.get(meta.get("agent_role"), "coordinator" if identity in parents else "unknown"), "status": "unknown",
                             "tokens": {k: 0 for k in FIELDS}, "token_coverage": "unknown", "_segments": set(), "_tokens": {}})
+                        source = meta.get("source")
+                        spawn = source.get("subagent", {}).get("thread_spawn", {}) if isinstance(source, dict) and isinstance(source.get("subagent"), dict) else {}
+                        row["agent_role"] = meta.get("agent_role")
+                        row["parent_thread_id"] = spawn.get("parent_thread_id") if isinstance(spawn, dict) else None
+                        row["parent_turn_id"] = context.get("root_turn_id")
+                        for key in ("agent_role", "parent_thread_id", "parent_turn_id"):
+                            if not isinstance(row[key], str):
+                                row[key] = None
                         if typ == "turn_context":
                             row["category"] = ROLES.get(meta.get("agent_role"), "coordinator" if identity in parents else "unknown")
                         if event == "task_complete":
@@ -182,6 +190,12 @@ def review(home, state, period="7d", now=None, *, paths=None, include_events=Fal
                             counts["unknown_token_events"] += 1
                             if identity in turns:
                                 turns[identity]["token_coverage"] = "partial"
+                                if include_events:
+                                    events.append({"id": hashlib.sha256(json.dumps((identity, record.get("timestamp"), ordinal, "missing_usage")).encode()).hexdigest(),
+                                        "date": at.isoformat(), "thread_id": identity[0], "turn_id": active,
+                                        "model": context.get("model", "unknown"), "reasoning_effort": context.get("effort", "unknown"),
+                                        "category": turns[identity]["category"], "tokens": None,
+                                        "speed": context.get("service_tier", "unknown")})
                         continue
                     if previous is not None and any(total[k] < previous[k] for k in ("input_tokens", "output_tokens", "total_tokens")):
                         reset_epoch += 1

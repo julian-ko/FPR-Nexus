@@ -1,8 +1,13 @@
 # Validation
 
-Version 1.1.0 · 2026-10-15 · macOS Apple Silicon · Python 3.12.14
+Version 1.2.0 · 2026-10-15 · macOS Apple Silicon · Python 3.12.14
 
 ## Verified
+
+- 1.2.0 adds complete default text reports and structured scope/model/task/date/activity views. Tests reconcile all breakdown credits with the total, keep missing-event turns in denominators, avoid double counting cache/reasoning, distinguish observed execution from selected models, and preserve old estimates when the parser changes.
+- 152 automated test runs pass, including installation, migration, recovery, hooks, CLI and chat reporting, local route records, duplicate choices, changed intent, parent/child attribution, no-prompt retention, invalid identities, completed turns and symlink checks. The existing socket fixture needs execution outside the restricted sandbox; it passes without changing the production guard.
+- A compatibility check used a temporary SQLite backup of an existing 1.1.0 ledger and read local journals. Pre-existing event records remained byte-identical. All/Nexus/unattributed totals and model/date/task/activity credit sums reconciled. The temporary report rendered successfully. This check did not modify the installed runtime, Codex configuration or original ledger. No local usage records are included in this package.
+- Account source was compared with the repository baseline before edits. Manifests preserve the existing account display metadata, author and default prompt; the package slug and audience are unchanged. Python project, runtime, hook and chat-launcher versions are synchronized.
 
 - 1.1.0 adds a separate SQLite usage ledger, changed-file import, all/Nexus scopes, UTC date/model/task groups and versioned Standard credits estimates. Tests cover repeated imports/copies, deleted source logs, absent install state after removal, persisted rate versions, missing cache splits, nonstandard speeds, unknown prices, parent-turn attribution and path safety. Fixture prompt content is not stored.
 - Version policy tests cover semantic version ordering, deadlines, unavailable network, cached required policy, size/schema validation and symlink rejection. The policy contains data only; no server-selected code is downloaded or executed. The update command opens setup from the host-installed package after version checks.
@@ -42,4 +47,4 @@ Setup needs a usable Python 3.11+ interpreter with venv and ensurepip. It checks
 
 The plugin host installs plugin files before onboarding. Legacy removal happens during setup, before native plugin settings are applied. Removing the plugin alone does not undo model configuration; use disable or restore first. Local usage review is not billing or account-quota measurement.
 
-1.1.0 has not been installed into the user's running client or a teammate's account in this change. The new Stop/SessionEnd collection hooks need host trust and a target-client check. Background collection is best-effort; deleted-before-collection data is unrecoverable. Public Standard credits are estimates with explicit assumptions, not company billing. No usage upload endpoint or company-wide mandatory update mechanism was implemented. The public version-policy endpoint must be deployed with the repository release before live checks can succeed. A GitHub source release does not itself update a separately saved workspace plugin.
+1.2.0 has not been activated in the user's running client or a teammate's account during this change. Hooks need host trust and a new session after the normal runtime upgrade. Future route attribution asks the assistant to record its choice; if skipped, attribution may stay unknown. Selected settings are not evidence that delegation completed. Background collection is best-effort; deleted-before-collection data is unrecoverable. Public Standard credits are estimates with explicit assumptions, not company billing. No usage upload endpoint, automatic optimization recommendations or company-wide mandatory update mechanism was implemented. A GitHub source release does not itself update a separately saved workspace plugin.

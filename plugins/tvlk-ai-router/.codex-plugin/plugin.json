@@ -1,9 +1,28 @@
 {
-  "name": "tvlk-ai-router",
-  "version": "1.1.0",
-  "interface": {"displayName": "FPR Nexus"},
-  "description": "Task routing, local model usage and safe native configuration recovery.",
-  "skills": "./skills",
   "hooks": "./hooks/hooks.json",
-  "extensions": {"com.openai": {"onboardingSkill": "./skills/setup/SKILL.md"}}
+  "interface": {
+    "defaultPrompt": [
+      "Set up FPR Nexus and replace my previous router installation safely."
+    ],
+    "developerName": "Julian Ko",
+    "displayName": "FPR Nexus",
+    "shortDescription": "Task routing and model setup",
+    "longDescription": "Task routing, model settings, local usage review and backup recovery.",
+    "category": "Other",
+    "capabilities": []
+  },
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/setup/SKILL.md"
+    }
+  },
+  "name": "tvlk-ai-router",
+  "version": "1.2.0",
+  "description": "Task routing, model settings, local usage review and backup recovery.",
+  "author": {
+    "name": "Julian Ko",
+    "email": "julian.ko@traveloka.com"
+  },
+  "keywords": [],
+  "skills": "./skills"
 }

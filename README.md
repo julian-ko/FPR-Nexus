@@ -1,6 +1,6 @@
 # FPR Nexus
 
-Version 1.1.0 · Personal Codex plugin · macOS
+Version 1.2.0 · Codex plugin · macOS
 
 Formerly TVLK-OpenAI-Router. Existing installations keep the same plugin identity, `tvlk-ai-router` commands, settings and backups.
 
@@ -54,7 +54,9 @@ tvlk-ai-router restore <backup-id>
 tvlk-ai-router review since-install
 ```
 
-Usage review keeps local statistics outside the plugin, with no automatic expiry. Choose all local usage or the Nexus subset; group by date, model or task. Credits are estimated with the public Standard rate card, not a company invoice or subscription quota. Missing data and unknown task types remain visible. No usage is uploaded.
+One review now shows All vs Nexus vs unattributed usage, uncached/cache/output tokens and credit splits, models, task types, daily trends, execution roles and missing data. Future routing choices record fixed task/reason labels and selected settings; journals supply actual model usage and parent/child links. A choice is not proof that the child ran. Coordinator usage includes context, tools and summaries, not only classification.
+
+Statistics and route records stay outside the plugin with no automatic expiry. Credits use the public Standard rate card, not a company invoice or subscription quota. Unknown historical tasks stay unknown. No usage is uploaded and no automatic optimization advice is generated. [Read the short guide](plugins/tvlk-ai-router/USAGE-AND-UPDATES.md).
 
 Version checks read a small public policy file. Refresh the plugin in Codex, then enter `tvlk-ai-router update prepare` to open the existing safe setup flow. A minimum-version policy limits Nexus entry points; it does not control direct Codex use. Existing 1.0.8 users need one normal upgrade before these checks exist.
 

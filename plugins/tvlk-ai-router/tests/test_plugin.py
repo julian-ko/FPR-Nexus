@@ -70,6 +70,8 @@ class PluginTests(unittest.TestCase):
             result = hook.context(payload, self.runtime)
             self.assertEqual(result["hookSpecificOutput"]["hookEventName"], event)
             self.assertIn("tvlk_ai_route_coding", result["hookSpecificOutput"]["additionalContext"])
+            self.assertIn("chat record-route", result["hookSpecificOutput"]["additionalContext"])
+            self.assertIn("--session-id session", result["hookSpecificOutput"]["additionalContext"])
             self.assertEqual(before, self.fixture.manager().state_file.read_bytes())
         self.assertIsNone(hook.context(self.payload(source={"subagent": {"thread_spawn": {"parent_thread_id": "root"}}}, role="tvlk_ai_route_coding"), self.runtime))
         missing = self.payload()
