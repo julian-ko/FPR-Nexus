@@ -1,6 +1,6 @@
 # FPR Nexus
 
-Version 1.2.0 · Codex plugin · macOS
+Version 1.3.0 · Codex plugin · macOS
 
 Formerly TVLK-OpenAI-Router. Existing installations keep the same plugin identity, `tvlk-ai-router` commands, settings and backups.
 
@@ -54,12 +54,14 @@ tvlk-ai-router restore <backup-id>
 tvlk-ai-router review since-install
 ```
 
-One review now shows All vs Nexus vs unattributed usage, uncached/cache/output tokens and credit splits, models, task types, daily trends, execution roles and missing data. Future routing choices record fixed task/reason labels and selected settings; journals supply actual model usage and parent/child links. A choice is not proof that the child ran. Coordinator usage includes context, tools and summaries, not only classification.
+Every review now saves a timestamped JSON/Markdown pair under `~/.local/share/fpr-nexus-history/exports/`. The five table sections cover summary, model plus reasoning effort, UTC date/model/effort/task, first five usage records, and missing data. JSON includes every usage record, routing evidence and decimal-string credits. All/Nexus/unattributed scopes remain separate. Merge overlapping exports by event_id, not by adding totals. No local analysis or upload runs.
 
 Statistics and route records stay outside the plugin with no automatic expiry. Credits use the public Standard rate card, not a company invoice or subscription quota. Unknown historical tasks stay unknown. No usage is uploaded and no automatic optimization advice is generated. [Read the short guide](plugins/tvlk-ai-router/USAGE-AND-UPDATES.md).
 
 Version checks read a small public policy file. Refresh the plugin in Codex, then enter `tvlk-ai-router update prepare` to open the existing safe setup flow. A minimum-version policy limits Nexus entry points; it does not control direct Codex use. Existing 1.0.8 users need one normal upgrade before these checks exist.
 
 The repository is public. This plugin requires local tools; ordinary ChatGPT cloud chats cannot control local model settings.
+
+Workspace admins can enable GitHub marketplace sync for plugin updates. This does not upgrade the separate Nexus runtime: setup still waits for client exit and verifies backups before writing. A local ZIP has no remote update source; 1.3.0 does not enable silent runtime upgrades.
 
 [Commands, updates and recovery](OPERATIONS.md) · [Validation](VALIDATION.md) · [Third-party notices](plugins/tvlk-ai-router/THIRD-PARTY.md)

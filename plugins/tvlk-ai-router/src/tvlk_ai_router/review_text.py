@@ -1,59 +1,52 @@
-"""Human-readable review, shared by Terminal and chat commands."""
+"""Tables from the same snapshot as the portable JSON, without local analysis."""
+import json
 from decimal import Decimal
 
 
 def render(report):
     def amount(value):
-        return "unknown" if value is None else f"{Decimal(str(value)):,.2f}"
+        return "unknown" if value is None else f"{Decimal(str(value)):,.4f}"
 
     def table(headers, rows):
         lines.extend(["", "| " + " | ".join(headers) + " |", "| " + " | ".join("---" for _ in headers) + " |"])
-        lines.extend("| " + " | ".join(str(v).replace("|", "\\|").replace("\n", " ") for v in row) + " |" for row in rows)
+        lines.extend("| " + " | ".join(("unknown" if v is None else str(v)).replace("|", "\\|").replace("\n", " ") for v in row) + " |" for row in rows)
 
-    lines = ["FPR Nexus usage review", "", f"Period: {report['from']} to {report['to_exclusive']} (end excluded). Timezone: UTC.",
-             f"Selected scope: {report['scope']}. All means retained local Codex user sessions, including non-Nexus usage.",
-             "Nexus is a subset of All. Unattributed may include Nexus work without evidence."]
-    table(["Scope", "Execution turns", "Observed tokens", "Estimated credits", "Unpriced events"],
-          [[name, row["execution_turns"], f"{row['observed_tokens']['total_tokens']:,}", amount(row["estimated_credits"]), row["unpriced_events"]]
-           for name, row in report["scope_comparison"].items()])
-    lines.extend(["", "Token and cost split (selected scope; known subtotals)"])
-    parts = report["credit_breakdown"]
-    t = report["observed_tokens"]
-    table(["Part", "Tokens", "Estimated credits"], [
-        ["Uncached input", f"{t['uncached_input_tokens']:,}", amount(parts["uncached_input"])],
-        ["Cached input", f"{t['cached_input_tokens']:,}", amount(parts["cached_input"])],
-        ["Output", f"{t['output_tokens']:,}", amount(parts["output"])],
-        ["Reasoning (already in output)", f"{t['reasoning_output_tokens']:,}", "included above"]])
-    lines.append(f"Missing credit splits: {report['credit_breakdown_missing_events']} events. Missing token fields: {report['missing_fields']}.")
-    sections = {"model": "Models", "task": "Task types", "activity": "Execution roles", "date": "Daily usage (UTC)"}
-    for key in (report["group_by"], *(k for k in sections if k != report["group_by"])):
-        title = sections[key]
-        lines.extend(["", title])
-        table([title, "Turns", "Tokens", "Credits", "Known credit share", "Avg credits/turn", "Unpriced"],
-              [[g["group"], g["execution_turns"], f"{g['observed_tokens']['total_tokens']:,}", amount(g["estimated_credits"]),
-                f"{g['known_credit_share']:.1%}" if g["known_credit_share"] is not None else "unknown",
-                amount(g["average_estimated_credits_per_turn"]), g["unpriced_events"]] for g in report["by_" + key]])
-    lines.extend(["", "Largest observed contributors (up to 5; no optimization recommendations)"])
-    for row in report["high_consumption"]:
-        lines.append(f"- {row['date']}: {', '.join(row['models'])}; task={row['category']}; activity={row['activity']}; "
-                     f"{amount(row['estimated_credits'])} credits; {row['usage_events']} usage observations; "
-                     f"{row['unpriced_events']} unpriced. Thread {row['thread_id']}, turn {row['turn_id']}.")
-        if row["evidence"]:
-            lines.append("  Evidence: " + "; ".join(row["evidence"]) + ".")
-    decisions = report["routing_records"]
-    lines.extend(["", f"Routing records: {len(decisions)} attributed or linked turns; showing up to 5 recent records. --json includes all records."])
-    for row in sorted(decisions, key=lambda r: r["date"], reverse=True)[:5]:
-        choices = "; ".join(f"{d['task_type']}/{d['mode']}, reason={d['reason']}, selected={d['selected_model']}/{d['selected_effort']}" for d in row["route_decisions"]) or "selection reason unknown"
-        lines.append(f"- {row['thread_id']}/{row['turn_id']}: {choices}; actual models={','.join(row['observed_models']) or 'unknown'}; "
-                     f"actual efforts={','.join(row['observed_efforts']) or 'unknown'}; parent={row['parent_thread_id'] or 'unknown'}/{row['parent_turn_id'] or 'unknown'}; evidence={row['attribution_basis']}.")
-    lines.extend(["", "Data quality",
-                  f"Estimate: {report['estimate_status']}; partial/unknown turns: {report['turns_with_partial_or_unknown_data']}; "
-                  f"turns without events: {report['turns_without_observed_events']}; unpriced events: {report['unpriced_events']}.",
-                  f"Unknown task turns: {report['unknown_task_turns']}; unknown attribution turns: {report['unknown_attribution_turns']}.",
-                  f"Standard speed assumed: {report['standard_speed_assumed_events']} events. Unpriced reasons: {report['unpriced_reasons']}.",
-                  f"Whole-file scan coverage (not just the date range): {report['coverage']}.", "", "Rates (credits per 1 million tokens)"])
-    table(["Model", "Rate version", "Uncached input", "Cached input", "Output"],
-          [[r["model"], r["version"], *[r["credits_per_million"][k] for k in ("uncached_input", "cached_input", "output")]] for r in report["rates_used"]])
-    lines.extend([f"Source: {report['pricing']['source']}", report["pricing"]["basis"], report["pricing"]["historical"], ""])
+    period, summary = report["period"], report["summary"]
+    lines = ["# FPR Nexus usage review", "", f"Period: {period['from_inclusive']} to {period['to_exclusive']} (end excluded). Timezone: UTC.",
+             f"Selected scope: {report['selected_scope']}. Nexus is a subset of All; unattributed is not proven non-Nexus.",
+             "", "## 1. Summary"]
+    table(["Scope", "Turns", "Usage events", "Observed tokens", "Estimated credits", "Unpriced events", "Status"],
+          [[name, r["execution_turns"], r["usage_events"], r["observed_tokens"]["total_tokens"], amount(r["estimated_credits"]), r["unpriced_events"], r["estimate_status"]]
+           for name, r in report["scope_comparison"].items()])
+    table(["Part (selected scope)", "Tokens", "Estimated credits"],
+          [[label, summary["observed_tokens"][token], amount(summary["credit_breakdown"][part]) if part else "included in output"]
+           for label, token, part in (("Uncached input", "uncached_input_tokens", "uncached_input"),
+                                     ("Cached input", "cached_input_tokens", "cached_input"), ("Output", "output_tokens", "output"),
+                                     ("Reasoning (already in output)", "reasoning_output_tokens", None))])
+    lines.extend(["", "## 2. Model and reasoning effort"])
+    table(["Model", "Reasoning effort", "Turns", "Uncached input", "Cached input", "Output", "Estimated credits", "Unpriced events"],
+          [[r["model"], r["reasoning_effort"], r["execution_turns"], *[r["observed_tokens"][k] for k in ("uncached_input_tokens", "cached_input_tokens", "output_tokens")],
+            amount(r["estimated_credits"]), r["unpriced_events"]] for r in report["by_model_reasoning_effort"]])
+    lines.extend(["", "## 3. Date, model, reasoning effort and task"])
+    table(["Date (UTC)", "Model", "Reasoning effort", "Task type", "Turns", "Observed tokens", "Estimated credits", "Unpriced events"],
+          [[r["date_utc"], r["model"], r["reasoning_effort"], r["task_type"], r["execution_turns"], r["observed_tokens"]["total_tokens"],
+            amount(r["estimated_credits"]), r["unpriced_events"]] for r in report["by_date_model_reasoning_task"]])
+    lines.extend(["", "## 4. Usage records (first 5)", "", f"JSON contains all {len(report['records'])} records. Values below are observations, not API-call counts."])
+    table(["Event ID", "Time (UTC)", "Model", "Reasoning effort", "Task type", "Activity", "Input", "Cached input", "Output", "Reasoning output", "Total", "Estimated credits"],
+          [[r["event_id"], r["timestamp_utc"], r["model"], r["reasoning_effort"], r["task_type"], r["activity"],
+            *[r["token_usage"][k] for k in ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_output_tokens", "total_tokens")],
+            amount(r["estimated_credits"])] for r in report["records"][:5]])
+    lines.extend(["", "## 5. Missing data and assumptions"])
+    table(["Field", "Value"], [[name, json.dumps(value, ensure_ascii=False) if isinstance(value, (dict, list)) else value]
+          for name, value in {**{k: summary[k] for k in ("estimate_status", "missing_fields", "unpriced_events", "unpriced_reasons",
+            "credit_breakdown_missing_events", "turns_without_observed_events", "turns_with_partial_or_unknown_data", "standard_speed_assumed_events", "stored_rate_versions")},
+            **report["coverage"]["period"], "whole_file_scan": report["coverage"]["whole_file_scan"]}.items()])
+    table(["Model", "Rate version", "Uncached input / 1M", "Cached input / 1M", "Output / 1M"],
+          [[r["model"], r["version"], *[r["credits_per_million"][k] for k in ("uncached_input", "cached_input", "output")]] for r in report["rate_cards"]])
+    lines.extend(["", report["pricing"]["basis"], report["pricing"]["historical"], f"Rate source: {report['pricing']['source']}", ""])
     lines.extend(report["notes"])
+    lines.extend(["", "No local analysis or upload. Merge overlapping JSON exports by event_id; do not add snapshot totals.",
+                  "Credits are decimal strings in JSON. Table values are rounded; zero totals may be partial. Unknown does not mean free."])
+    for kind, path in report.get("exports", {}).items():
+        lines.append(f"\nSaved {kind}: {path}")
     return "\n".join(lines)

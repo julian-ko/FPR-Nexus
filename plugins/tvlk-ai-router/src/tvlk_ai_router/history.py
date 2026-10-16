@@ -201,6 +201,32 @@ def grouped(events, selected, turns, dimension):
     return rows
 
 
+def compound_groups(events, selected, turns, dimensions):
+    buckets, keys, observed = defaultdict(list), defaultdict(set), set()
+    def label(row):
+        return tuple(row["date"][:10] if name == "date_utc" else row.get(name) or "unknown" for name in dimensions)
+    for event in events:
+        name, key = label(event), (event["thread_id"], event["turn_id"])
+        buckets[name].append(event)
+        keys[name].add(key)
+        observed.add(key)
+    for key in selected - observed:
+        keys[label(turns[key])].add(key)
+    return [{**dict(zip(dimensions, name)), **summarize(buckets[name], keys[name], turns)} for name in sorted(keys)]
+
+
+def export_record(event):
+    tokens = {name: (event.get("tokens") or {}).get(name) for name in FIELDS}
+    i, c = tokens["input_tokens"], tokens["cached_input_tokens"]
+    tokens["uncached_input_tokens"] = i-c if type(i) is int and type(c) is int and 0 <= c <= i else None
+    parts, rates = credit_parts(event)
+    return {"event_id": event["id"], "timestamp_utc": event["date"], "date_utc": event["date"][:10],
+            **{name: event.get(name) for name in ("thread_id", "turn_id", "model", "reasoning_effort", "task_type",
+                "activity", "attribution_basis", "parent_thread_id", "parent_turn_id", "estimated_credits", "speed", "pricing_reason", "rate_version")},
+            "token_usage": tokens, "credit_breakdown": {k: str(v) for k, v in parts.items()} if parts is not None else None,
+            "credits_per_million_tokens": dict(zip(("uncached_input", "cached_input", "output"), rates)) if rates else None}
+
+
 def report(manager, period="7d", scope="all", group_by="model", since=None, until=None, now=None):
     now = now or datetime.now(timezone.utc)
     if scope not in ("all", "nexus") or group_by not in ("date", "model", "task"):
@@ -210,6 +236,7 @@ def report(manager, period="7d", scope="all", group_by="model", since=None, unti
     try:
         with db:
             source = collect(db, manager.home, manager.state, now)
+        db.execute("BEGIN")  # Keep all views in one snapshot while background collection continues.
         origin = db.execute("SELECT value FROM meta WHERE key=?", ("installation:" + source,)).fetchone()
         start = json.loads(origin[0]) if origin else installation_start(manager.state)
         if since:
@@ -250,26 +277,11 @@ def report(manager, period="7d", scope="all", group_by="model", since=None, unti
         if scope == "nexus":
             events, selected = nexus_events, nexus_keys
         summary = summarize(events, selected, turns)
+        events.sort(key=lambda e: (e["date"], e["id"]))
         views = {name: grouped(events, selected, turns, name) for name in ("model", "task", "date", "activity")}
         by_turn = defaultdict(list)
         for e in events:
             by_turn[(e["thread_id"], e["turn_id"])].append(e)
-        top = []
-        ordered = sorted(by_turn, key=lambda k: sum((Decimal(e["estimated_credits"]) for e in by_turn[k] if e["estimated_credits"] is not None), Decimal(0)), reverse=True)
-        for key in ordered[:5]:
-            row = turns.get(key, {})
-            values = summarize(by_turn[key], {key}, turns)
-            i, c = (values["observed_tokens"][k] for k in ("input_tokens", "cached_input_tokens"))
-            reasons = ["Multiple observed usage events in one execution turn"] if values["usage_events"] > 1 else []
-            if i and c / i >= .5:
-                reasons.append("Most input is cached; total tokens overstate its relative credit cost")
-            if values["observed_tokens"]["output_tokens"] > i:
-                reasons.append("Output tokens dominate; output has a higher unit rate")
-            top.append({"thread_id": key[0], "turn_id": key[1], "date": row.get("date"), **values,
-                        "models": sorted({e["model"] for e in by_turn[key]}), "reasoning_efforts": sorted({e["reasoning_effort"] for e in by_turn[key]}),
-                        "category": row.get("task_type", "unknown"), "activity": row.get("activity", "unknown"), "evidence": reasons,
-                        "parent_thread_id": row.get("parent_thread_id"), "parent_turn_id": row.get("parent_turn_id"),
-                        "route_decisions": row.get("route_decisions", []), "attribution_basis": row.get("attribution_basis", "unknown")})
         coverage = defaultdict(int)
         for (body,) in db.execute("SELECT coverage FROM files WHERE source=?", (source,)):
             for k, v in json.loads(body).items():
@@ -278,12 +290,15 @@ def report(manager, period="7d", scope="all", group_by="model", since=None, unti
         return {"scope": scope, "from": lower.isoformat(), "to_exclusive": upper.isoformat(), "timezone": "UTC", "installation_start": start,
                 "group_by": group_by, "groups": views[group_by], **summary,
                 "scope_comparison": comparison, "by_model": views["model"], "by_task": views["task"], "by_date": views["date"], "by_activity": views["activity"],
+                "by_model_reasoning_effort": compound_groups(events, selected, turns, ("model", "reasoning_effort")),
+                "by_date_model_reasoning_task": compound_groups(events, selected, turns, ("date_utc", "model", "reasoning_effort", "task_type")),
+                "records": [export_record(e) for e in events],
                 "routing_records": [{"thread_id": k[0], "turn_id": k[1], "date": turns[k]["date"],
                     **{name: turns[k].get(name) for name in ("task_type", "activity", "attribution_basis", "parent_thread_id", "parent_turn_id", "route_decisions", "selection_scope")},
                     "observed_models": sorted({e["model"] for e in by_turn[k]}),
                     "observed_efforts": sorted({e["reasoning_effort"] for e in by_turn[k]})}
                     for k in sorted(selected) if k in turns and (turns[k]["nexus"] or turns[k].get("parent_thread_id"))],
-                "high_consumption": top, "coverage": dict(coverage), "history_file": str(directory / "usage.sqlite3"),
+                "coverage": dict(coverage), "history_file": str(directory / "usage.sqlite3"),
                 "pricing": {"basis": "Standard credits estimate; company billing unknown; not an invoice or quota", "version": RATE_VERSION,
                             "source": RATE_SOURCE, "historical": "First import uses this rate card even for older usage; stored estimates are not repriced"},
                 "notes": ["All means retained local user sessions; cloud, deleted-before-collection and system sessions are not covered.",
@@ -292,11 +307,10 @@ def report(manager, period="7d", scope="all", group_by="model", since=None, unti
                           "Coordinator usage includes reading, tools and summaries; it is not a measured classification-only cost. Mixed means multiple recorded choices.",
                           "All, Nexus and unattributed are comparisons, not additive totals. Unknown historic tasks are not guessed from text or model names.",
                           "Dates are UTC usage-event dates. A turn spanning dates or models appears in several groups; group turn counts are not additive.",
-                          "Usage events are observations, not a reliable API-call count. Average credits use known credits and all selected turns, and can be partial.",
+                          "Usage events are observations, not a reliable API-call count. Credit totals are observed subtotals and can be partial.",
                           "Only observed amounts are summed. Unknown prices, cache splits and nonstandard speeds are not treated as free.",
                           "Token/credit totals may be partial; coverage counters describe scanned files, not only this date range.",
                           "Reasoning is included in output; cached input is included in input. Tool charges and contract discounts are not included.",
-                          "Collected statistics survive plugin removal. Collection stops when hooks are removed; no retention expiry is applied.",
-                          "Consumption evidence is not a proven cause or a judgement of task quality."]}
+                          "Collected statistics survive plugin removal. Collection stops when hooks are removed; no retention expiry is applied."]}
     finally:
         db.close()

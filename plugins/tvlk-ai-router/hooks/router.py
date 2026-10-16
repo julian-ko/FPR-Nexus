@@ -7,7 +7,7 @@ import shlex
 from pathlib import Path
 
 
-def context(payload, runtime, version="1.2.0"):
+def context(payload, runtime, version="1.3.0"):
     event = payload.get("hook_event_name")
     if event not in ("SessionStart", "UserPromptSubmit"):
         return None

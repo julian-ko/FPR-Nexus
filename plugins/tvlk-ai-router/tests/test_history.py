@@ -150,8 +150,9 @@ class HistoryTests(UsageTests):
 
     def test_text_report_contains_full_sections_and_partial_labels(self):
         from tvlk_ai_router.review_text import render
+        from tvlk_ai_router.usage_export import dataset
         self.write([self.meta(), self.context(model="gpt-6-luna"), self.token(10)])
-        output = render(self.run_report())
+        output = render(dataset(self.run_report()))
         for text in ("Nexus is a subset", "Uncached input", "Cached input", "Reasoning (already in output)",
-                     "Task types", "Daily usage (UTC)", "Execution roles", "Unknown task turns", "Rates (credits per 1 million tokens)", "not an invoice"):
+                     "Model and reasoning effort", "Date (UTC)", "Usage records (first 5)", "unknown_task_turns", "Rate version", "not an invoice"):
             self.assertIn(text, output)

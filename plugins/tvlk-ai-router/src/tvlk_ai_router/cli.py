@@ -32,6 +32,8 @@ Date range      tvlk-ai-router review --from 2026-10-01 --to 2026-10-15 --group-
 Check updates   tvlk-ai-router update check  (plugin chat launcher)
 Prepare update  tvlk-ai-router update prepare  (refresh plugin first)
 
+Every review saves JSON and Markdown tables in ~/.local/share/fpr-nexus-history/exports/.
+Use review --json for schema 1.0.0 output. Dates are UTC; reasoning effort is included.
 Mutating commands support --dry-run; configuration views support --json.
 Restore defaults to configuration only. restore --scope full also rolls back chat history and worktrees.
 Enter management commands in Codex chat; the Skill invokes the local program.
@@ -65,7 +67,10 @@ def route_record(manager, args):
 
 def usage_report(manager, args):
     from .history import report
-    return report(manager, args.period, args.scope, args.group_by, args.since, args.until)
+    from .usage_export import dataset, save
+    result = dataset(report(manager, args.period, args.scope, args.group_by, args.since, args.until))
+    result["exports"] = save(result, manager.data.parent / "fpr-nexus-history" / "exports")
+    return result
 
 
 def parser():

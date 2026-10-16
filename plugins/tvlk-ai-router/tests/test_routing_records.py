@@ -119,8 +119,14 @@ class RoutingRecordTests(unittest.TestCase):
                         code = main(prefix + ["review", "all", "--group-by", "task"] + flags)
                     self.assertEqual(code, 0)
                     if flags:
-                        self.assertEqual(json.loads(output.getvalue())["scope_comparison"]["nexus"]["execution_turns"], 1)
+                        result = json.loads(output.getvalue())
+                        self.assertEqual(result["scope_comparison"]["nexus"]["execution_turns"], 1)
+                        from pathlib import Path
+                        saved = json.loads(Path(result["exports"]["json"]).read_text())
+                        self.assertEqual(saved, {k: v for k, v in result.items() if k != "exports"})
+                        self.assertTrue(Path(result["exports"]["table"]).is_file())
                     else:
                         text = output.getvalue()
-                        self.assertLess(text.index("Task types"), text.index("Models"))
-                        self.assertIn("Daily usage (UTC)", text)
+                        self.assertIn("Date, model, reasoning effort and task", text)
+                        self.assertIn("Saved json:", text)
+                        self.assertIn("Saved table:", text)

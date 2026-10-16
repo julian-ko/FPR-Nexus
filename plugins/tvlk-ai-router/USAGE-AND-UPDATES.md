@@ -1,21 +1,18 @@
-# FPR Nexus 1.2.0
+# FPR Nexus 1.3.0
 
 ## What
 
-- Keep local usage statistics after the plugin is removed.
-- View all recorded local Codex usage or the Nexus subset.
-- One report includes scope comparison, token/cost splits, UTC dates, models, task types and execution roles.
-- Record future routing choices and show actual parent/child usage separately.
-- Check the latest version and required upgrade date.
-- No usage data is sent to a server.
+- Route work with the existing model and reasoning settings.
+- Keep usage by date, model, reasoning effort and task type.
+- Every review saves one JSON file and one Markdown table file from the same snapshot.
+- Keep all local Codex usage separate from the proven Nexus subset.
+- Preserve statistics and exports after plugin removal. No usage upload.
 
 ## Why
 
-Token share is not cost share. Cached input and model prices matter. Nexus uses the public Standard credits rate card verified on 15 October 2026 as a default estimate. Company billing is unknown. Estimates are not an invoice, cash spending or subscription quota.
+Token share is not cost share. Cached input and model prices matter. Credits use the stored public Standard rate estimate, not the company's actual bill, cash spending or subscription quota. The default rate card was verified on 15 October 2026; saved estimates keep their original version.
 
-Statistics are saved in `~/.local/share/fpr-nexus-history/usage.sqlite3`, outside the plugin cache and configuration backups. There is no expiry. Keep this directory when removing the plugin or moving to a new computer. Collection stops when the plugin is removed; previously saved statistics remain.
-
-Nexus membership uses a recorded Nexus choice, a known custom agent role or a parent-turn link. All includes retained local user sessions, not every device, cloud task or system agent. Unattributed may contain Nexus work without enough evidence. Unknown historical task types stay unknown; they are not guessed from model names or message text. Deleted-before-collection logs cannot be recovered. No prompt, code, reply or tool output is stored in the ledger.
+Unknown data stays unknown. Task types come from recorded route choices, agent roles or parent links. They are not guessed from model names or private messages. Selected settings describe intent; journal records show actual models and reasoning effort.
 
 ## How
 
@@ -23,39 +20,57 @@ Enter in Codex chat:
 
 ```text
 tvlk-ai-router review since-install
-tvlk-ai-router review 30d --scope nexus --group-by task
-tvlk-ai-router review 30d --group-by model
-tvlk-ai-router review --from 2026-10-01 --to 2026-10-15 --group-by date
-tvlk-ai-router update check
+tvlk-ai-router review 30d --scope nexus
+tvlk-ai-router review --from 2026-10-01 --to 2026-10-15
+tvlk-ai-router review all --json
 ```
 
-Each review imports changed local logs. Trusted hooks also schedule collection at session start, prompts, turn completion and session end. Collection is best-effort: use `review all` before uninstall to capture final usage. Back up the history directory if protection from device loss is needed.
+Each review collects changed local journals, then saves:
 
-The report has six short parts:
+```text
+~/.local/share/fpr-nexus-history/
+  usage.sqlite3
+  exports/
+    <UTC timestamp>-<snapshot ID>/
+      usage.json
+      usage.md
+```
 
-1. **Scope:** All local usage, Nexus usage and unattributed usage. Nexus is part of All; do not add them together.
-2. **Tokens and credits:** Uncached input, cached input and output. Reasoning is a part of output, not an extra charge.
-3. **Breakdowns:** Models, task types, execution roles and UTC dates, with turns, credits, shares and average credits per turn. A turn can appear on more than one date or model row.
-4. **Largest contributors:** Up to five turns with dates, models, usage observations and measured evidence. Observations are not a reliable API-call count.
-5. **Routing records:** Selected task, reason code and model/effort, alongside observed models and parent/child IDs. Use `--json` for every record; the normal report shows five recent records.
-6. **Data quality:** Missing token fields, unpriced events, unknown tasks, rate versions and assumed Standard speed. Zeros are known subtotals when data is missing.
+The output includes both file paths. New exports do not replace old exports. A failed write does not publish half of a pair. Directories are private (0700); files are private (0600). No prompt, code, reply or tool output is exported.
 
-For new work, trusted routing hooks ask the main assistant to save one small local record before execution. Fixed types are coding, writing, product, analysis and unknown. Fixed reason codes describe code changes, text edits, product design, complex analysis, user choice, simple work, mixed work or management. No free-text reason is saved. Identical retries are deduplicated; changed choices remain visible as mixed intent. Selected settings are intent, not proof that execution succeeded or used that model.
+The table has five sections:
 
-Journal roles identify executors and parent/child relationships. The report separates coordinator, executor, direct and unknown activity. Coordinator usage includes reading context, tools and summaries; it is not a measured classification-only cost. If hooks are disabled, the assistant skips recording, or the journal has no valid active turn, attribution can remain unknown. Recording failures do not stop the user's work. Existing records remain after removal, including records whose source logs are later deleted.
+1. **Summary:** UTC time range, All/Nexus/unattributed usage, turns, usage events, tokens and credits.
+2. **Model and reasoning effort:** Turns, uncached input, cached input, output and estimated credits.
+3. **Date, model, effort and task:** Daily rows with turns, tokens and credits.
+4. **First five records:** The JSON contains every usage record and all routing records.
+5. **Missing data:** Unknown fields, unpriced events, partial coverage, speed assumptions and rate versions.
 
-This release implements complete reporting and task records only. It does not produce automatic optimization recommendations or upload usage.
+JSON schema `1.0.0` contains `period`, `selected_scope`, `measurement`, `summary`, `scope_comparison`, `by_model_reasoning_effort`, `by_date_model_reasoning_task`, `coverage`, `rate_cards`, `routing_records` and `records`. Each snapshot has a unique ID, UTC creation time and plugin version. Credit amounts are decimal strings; missing amounts are null. Table credit values are rounded to four decimal places. The command's JSON response adds local export paths; the saved portable JSON does not include those paths.
 
-Read estimated credits alongside missing/unpriced events and partial-turn counts. Missing cache splits, unknown model prices and explicit nonstandard speed modes are unpriced. If speed is not recorded, Standard is assumed and identified. Historical imports use the default rate card; saved estimates keep their original price version. High-consumption evidence explains measured input/output/cache patterns, not task quality or proven waste.
+For later upload, merge overlapping snapshots by `event_id`. Do not add snapshot totals. Raw usage events are not a reliable API-call count. Nexus is part of All. Turns spanning models, reasoning settings or dates can appear in several groups. Cache is part of input; reasoning is part of output. All amounts are observed subtotals; zero does not mean free when fields are missing.
 
-For an update, refresh FPR Nexus in Codex first. Start a new chat and enter:
+`--json` now uses the portable schema above instead of the 1.2.0 flat report. Existing period, scope and date arguments still work. `--group-by` remains accepted; all five table sections are always shown in the fixed order. There is no local analysis, largest-contributor explanation or automatic recommendation.
+
+Trusted hooks collect usage in the background and ask the assistant to record routing choices. These records remain local. Collection is best-effort: missing hooks, deleted journals or skipped route records can leave gaps. All means retained local user sessions, not every device or cloud task. Run `review all` before removal, and keep the history directory. There is no automatic expiry.
+
+## Updates
+
+Refresh the plugin in Codex, start a new chat, then enter:
 
 ```text
 tvlk-ai-router update prepare
 ```
 
-Leave the setup window open, quit clients when asked, and let setup continue. Backup checks, client-exit checks and failure recovery remain in place. A window waiting for client exit is not a completed update.
+Keep the setup window open and quit clients when asked. Setup waits, checks again before writing, makes a verified backup and continues. Existing model choices and the backup baseline are preserved.
 
-Version policy comes from `releases/policy.json` in the public FPR-Nexus GitHub repository. Only version metadata is fetched; usage is not uploaded. Existing 1.0.8 installations need one normal upgrade first. A required upgrade limits Nexus guidance and configuration activation. Direct Codex use, review, disable and recovery remain available. This is not company-wide enforcement.
+There are two update layers:
 
-Official references: [Pricing](https://learn.chatgpt.com/docs/pricing), [Hooks](https://learn.chatgpt.com/docs/hooks).
+- **Plugin files:** A workspace admin can import the GitHub marketplace from `https://github.com/julian-ko/FPR-Nexus`. New workspace marketplaces have daily sync enabled. Local ZIP copies have no automatic remote source.
+- **Nexus runtime:** This separate local program still needs the setup step above. Plugin sync alone does not upgrade it. This release does not install a silent updater or write configuration while clients are running.
+
+A future opt-in updater could prepare files in the background and apply them after clients exit. It would still need version checks, backups and recovery. This is not implemented in 1.3.0.
+
+The public `releases/policy.json` endpoint carries version metadata only. No usage is uploaded and no server-provided command is run. Required updates limit Nexus activation; they do not block direct Codex use, review, disable or recovery.
+
+Official references: [Workspace marketplace sync](https://learn.chatgpt.com/docs/enterprise/plugin-management), [Local plugin updates](https://developers.openai.com/plugins/build/plugins), [Pricing](https://learn.chatgpt.com/docs/pricing).

@@ -18,6 +18,7 @@ APP_NAME = "TVLK-OpenAI-Router.app"
 BUNDLE_ID = "com.traveloka.tvlk-openai-router"
 ACTIONS = {"apply", "enable", "disable", "restore", "recover"}
 CHAT_HELP = {
+    "review_exports": "Every review saves JSON and Markdown tables under ~/.local/share/fpr-nexus-history/exports/. Both remain after plugin removal.",
     "title": "FPR Nexus · Chat management",
     "usage": "Enter these commands in local Codex chat, or use $tvlk-ai-router help explicitly. No terminal is needed.",
     "commands": ["tvlk-ai-router help", "tvlk-ai-router config show", "tvlk-ai-router status",

@@ -35,14 +35,15 @@ For uninstall, first run `review all` to retain final usage, then complete disab
 
 For model changes, show the configuration path and edit only requested router.toml fields before queuing apply. Preserve other settings. Do not edit generated native roles. For restore, require an explicit backup ID; list choices if missing. Default to config scope. Only append `--scope full` for an explicit full-history restore; it rolls back worktrees and chat history.
 
-Review updates a local statistics database without changing Codex configuration. The default command returns a complete readable report; `--json` returns structured data and all routing records. Present the following sections in the user's language; do not collapse the result into only a model table:
+Review updates the durable local ledger and saves one timestamped JSON/Markdown pair under `~/.local/share/fpr-nexus-history/exports/`. Keep both files after plugin removal. Link the returned files. The default output is tables; `--json` returns schema 1.0.0 with all usage and routing records. Show these five sections in the user's language:
 
-1. Time range and timezone; All local usage, Nexus subset and unattributed usage side by side. Never add the Nexus subset to All. Unattributed is not proven non-Nexus.
-2. Uncached input, cached input and output tokens with their estimated credit splits. Reasoning is already inside output. Missing splits are unknown, not free.
-3. Model, task, date and activity tables: execution turns, observed tokens, estimated credits, known-credit shares and average known credits per turn. Put the requested grouping first. Date groups use UTC; make any displayed timezone conversion explicit. Turns spanning dates/models appear more than once across rows.
-4. Up to five largest observed contributors with date, actual model, task type, usage observations and evidence. Observations are not a reliable API-call count. Show measured patterns without automatic optimization recommendations.
-5. Routing evidence: selected task/reason/model/effort, observed model/effort and parent/child IDs when present. Selected intent does not prove successful execution. Distinguish coordinator, executor, direct and unknown activity; coordinator work includes context, tools and summaries, not just classification. Keep unknown history unknown; do not infer categories from model names or private message text.
-6. Missing/unpriced counts, unknown attribution, assumed Standard speed, rate versions and pricing source. State that credits use the 2026-10-15 public Standard rate card; company bills, tool charges and subscription quota are unknown. Totals and averages can be partial. Do not call them an invoice or actual cash spending. Scan coverage counters refer to all scanned files, not just the selected dates.
+1. Summary: UTC period, All/Nexus/unattributed scopes, turns, observations, tokens and estimated credits, plus uncached/cache/output splits. Nexus is part of All.
+2. Model and reasoning effort: turns, uncached input, cached input, output and credits. Keep unknown efforts unknown.
+3. UTC date, model, reasoning effort and task type: turns, tokens and credits. Group turn counts are not additive.
+4. First five usage records. The JSON retains all records, including event IDs, parent/child links and routing intent. Selected settings do not prove actual execution.
+5. Missing data and assumptions: missing tokens, unpriced events, unknown tasks/attribution, assumed Standard speed and rate versions. Credits are estimates, not bills or subscription quota. Cache is part of input; reasoning is part of output.
+
+No local analysis, largest-contributor explanations or recommendations. No upload. Merge overlapping exports by `event_id`, not by adding snapshot totals. Amounts are decimal strings in JSON and rounded in tables. `--group-by` remains accepted for compatibility; all five sections are always included in this order. Task types come from recorded choices, roles or parent links, never guesses from model names or private text. Coverage scan counters describe whole files, not just the selected dates.
 
 Trusted routing hooks provide an internal `record-route` command for new work. Use its supplied session identity and transcript, with fixed category/mode/reason labels; never invent IDs or save prompts. Recording failures leave attribution unknown and must not block the user's task. Do not backfill historical route choices from guesses. Records and usage remain local and survive plugin removal.
 
