@@ -11,6 +11,9 @@ import tempfile
 import venv
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import runtime as runtime_versions
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from tvlk_ai_router.failed_shell import recognized_failed_shell
 
@@ -38,7 +41,7 @@ def preflight(root):
     for path in (root, state_path, *legacy_paths):
         if any(p.is_symlink() for p in (path, *path.parents)):
             raise ValueError("Installation paths must not contain symbolic links.")
-    if any((root / name).is_symlink() for name in ("shell-installation.json", "src", "src.old", ".venv", "runner.py", "tvlk-ai-router", "manage.sh")) or any(p.is_symlink() for p in (root / "src").rglob("*")):
+    if any((root / name).is_symlink() for name in ("shell-installation.json", "src", "src.old", ".venv", "runner.py", "runtime.py", "active.json", "releases", "tvlk-ai-router", "manage.sh")) or any(p.is_symlink() for p in (root / "src").rglob("*")):
         raise ValueError("The owned runtime contains symbolic links; stop before updating it.")
 
 
@@ -54,6 +57,9 @@ def install(package, config=None):
             raise ValueError("Another plugin setup is running; retry when it finishes.")
         preflight(root)
         _install(package, root, config)
+        runtime_versions.initialize(package, root)
+        subprocess.run([str(root / ".venv/bin/python"), "-I", str(root / "runner.py"), "chat", "help"], check=True)
+        print("Installed and verified. Reopen Codex and start a new chat.", flush=True)
 
 
 def _install(package, root, config=None):
@@ -84,7 +90,7 @@ def _install(package, root, config=None):
         if old_source.exists():
             raise ValueError("An unfinished source update exists; stop and inspect the runtime before retrying.")
         had_source = (root / "src").exists()
-        wrappers = {name: ((root / name).read_bytes(), (root / name).stat().st_mode & 0o777) for name in ("runner.py", "tvlk-ai-router", "manage.sh") if (root / name).exists()}
+        wrappers = {name: ((root / name).read_bytes(), (root / name).stat().st_mode & 0o777) for name in ("runner.py", "runtime.py", "tvlk-ai-router", "manage.sh") if (root / name).exists()}
         old_moved, new_moved = False, False
         try:
             if had_source:
@@ -92,7 +98,7 @@ def _install(package, root, config=None):
                 old_moved = True
             staged.rename(root / "src")
             new_moved = True
-            for name in ("runner.py", "tvlk-ai-router", "manage.sh"):
+            for name in ("runner.py", "runtime.py", "tvlk-ai-router", "manage.sh"):
                 shutil.copy2(package / "scripts" / name, root / name)
             (root / "tvlk-ai-router").chmod(0o700)
             subprocess.run([str(python), "-I", str(root / "runner.py"), "shell-install", *(["--config", str(Path(config).resolve())] if config else [])], check=True,
@@ -109,8 +115,7 @@ def _install(package, root, config=None):
         else:
             if old_source.exists():
                 shutil.rmtree(old_source)
-    print("Installed. Reopen Codex and start a new chat.", flush=True)
-    subprocess.run([str(python), "-I", str(root / "runner.py"), "chat", "help"], check=True)
+    print("Configuration step complete. Finalizing the runtime…", flush=True)
 
 
 def main():

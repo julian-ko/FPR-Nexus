@@ -1,6 +1,6 @@
 # FPR Nexus
 
-Version 1.3.0 · Codex plugin · macOS
+Version 1.4.0 · Codex plugin · macOS
 
 Formerly TVLK-OpenAI-Router. Existing installations keep the same plugin identity, `tvlk-ai-router` commands, settings and backups.
 
@@ -25,6 +25,7 @@ These are team defaults, not official best settings for every task. Your account
 - Verified backups before changes, with disable and restore commands.
 - New client folders are backed up and kept as they are; they do not need a Router update.
 - A setup check replaces the old router without losing settings or backups.
+- After one setup, compatible feature updates need no client restart.
 
 The main assistant reads the request and delegates work. It also reads context and reviews the result, so its token use is more than a short classification call.
 
@@ -33,7 +34,9 @@ The main assistant reads the request and delegates work. It also reads context a
 [Install in four steps](INSTALL.md).
 
 ```text
-Setup → Check old version → Verify backups → Remove old program → Enable plugin
+First / old install → Wait for exit → Back up → Migrate → Keep routing state
+
+Later update → Check compatibility → Switch runtime → Keep working
 
 Request → Luna → Coding / Writing / Product / Analysis → Result
 ```
@@ -58,10 +61,10 @@ Every review now saves a timestamped JSON/Markdown pair under `~/.local/share/fp
 
 Statistics and route records stay outside the plugin with no automatic expiry. Credits use the public Standard rate card, not a company invoice or subscription quota. Unknown historical tasks stay unknown. No usage is uploaded and no automatic optimization advice is generated. [Read the short guide](plugins/tvlk-ai-router/USAGE-AND-UPDATES.md).
 
-Version checks read a small public policy file. Refresh the plugin in Codex, then enter `tvlk-ai-router update prepare` to open the existing safe setup flow. A minimum-version policy limits Nexus entry points; it does not control direct Codex use. Existing 1.0.8 users need one normal upgrade before these checks exist.
+Version checks read a small public policy file. After Codex delivers the new plugin, the next Nexus command or routing hook activates a compatible runtime. `tvlk-ai-router update prepare` checks explicitly; `tvlk-ai-router update rollback` selects the previous compatible runtime. Running calls finish on their original version. Native settings, incompatible data changes and first/old installations still use the setup window and client-exit check. A minimum-version policy limits Nexus entry points; it does not control direct Codex use.
 
 The repository is public. This plugin requires local tools; ordinary ChatGPT cloud chats cannot control local model settings.
 
-Workspace admins can enable GitHub marketplace sync for plugin updates. This does not upgrade the separate Nexus runtime: setup still waits for client exit and verifies backups before writing. A local ZIP has no remote update source; 1.3.0 does not enable silent runtime upgrades.
+Workspace admins can enable GitHub marketplace sync for plugin delivery. Nexus activates only packages delivered by the host; it installs no background downloader. A local ZIP needs a newer package to be supplied. Host skill/hook refresh is separate and may require a new chat or client restart.
 
 [Commands, updates and recovery](OPERATIONS.md) · [Validation](VALIDATION.md) · [Third-party notices](plugins/tvlk-ai-router/THIRD-PARTY.md)

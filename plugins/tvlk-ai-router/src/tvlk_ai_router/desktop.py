@@ -27,7 +27,7 @@ CHAT_HELP = {
                  "tvlk-ai-router review", "tvlk-ai-router review 30d", "tvlk-ai-router review since-install",
                  "tvlk-ai-router review all --scope nexus --group-by task",
                  "tvlk-ai-router review --from 2026-10-01 --to 2026-10-15 --group-by date",
-                 "tvlk-ai-router update check", "tvlk-ai-router update prepare"],
+                 "tvlk-ai-router update check", "tvlk-ai-router update prepare", "tvlk-ai-router update rollback"],
     "changes": "Change requests open the local management window. Quit Codex, then click Run. Pending means the change has not been applied.",
     "scope": "Requires Codex chat with local tool access. Ordinary ChatGPT cloud chats cannot control local models or configuration.",
 }
@@ -249,7 +249,8 @@ def dispatch(args):
         CHAT_HELP["title"] = "FPR Nexus · Plugin chat management"
         CHAT_HELP["usage"] = "Read-only commands run in local Codex chat. Changes require a Terminal command after quitting Codex."
         CHAT_HELP["changes"] = "A change returns a quoted bash manage.sh command. Quit Codex/ChatGPT, then run it in Terminal. Pending means no configuration change has been applied."
-        CHAT_HELP["setup"] = "Enter tvlk-ai-router setup to open the setup window. It checks and migrates old installations before applying plugin settings."
+        CHAT_HELP["setup"] = "Enter tvlk-ai-router setup. First installation and legacy migration open a waiting window; compatible runtime updates finish without quitting Codex."
+        CHAT_HELP["updates"] = "After the one-time setup, compatible host-delivered packages activate on the next command or routing hook. update rollback selects the previous compatible runtime and holds automatic reactivation of that release."
     if os.environ.get("TVLK_ROUTER_SHELL_ROOT") and args.command == "desktop" and args.operation == "install":
         raise RouterError("Use bash install.sh for the source package", 4)
     if args.command == "chat" and args.operation == "help":

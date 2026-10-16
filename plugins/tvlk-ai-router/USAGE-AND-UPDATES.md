@@ -1,4 +1,4 @@
-# FPR Nexus 1.3.0
+# FPR Nexus 1.4.0
 
 ## What
 
@@ -56,21 +56,37 @@ Trusted hooks collect usage in the background and ask the assistant to record ro
 
 ## Updates
 
-Refresh the plugin in Codex, start a new chat, then enter:
+On first installation, or when upgrading an older App, Shell or pre-1.4.0 plugin runtime, run setup once. Keep the setup window open, quit clients when asked, then reopen Codex. Existing model choices, routing state, the original backup baseline, usage data and exports are preserved.
+
+After that, compatible program updates need no Codex restart. The host must deliver the new plugin package first. The next Nexus command or trusted root routing hook stages the program in its own version directory, verifies it, then switches later calls to it. Running commands retain their old source directory. No new daemon or remote code downloader is installed.
+
+Enter in Codex chat:
 
 ```text
+tvlk-ai-router update check
 tvlk-ai-router update prepare
+tvlk-ai-router update rollback
 ```
 
-Keep the setup window open and quit clients when asked. Setup waits, checks again before writing, makes a verified backup and continues. Existing model choices and the backup baseline are preserved.
+- **check:** Show policy, package version, active runtime, previous runtime and any rollback hold.
+- **prepare:** Explicitly try the live update. If configuration, dependency, launcher or data compatibility changed, open the existing waiting setup window.
+- **rollback:** Switch to the previous compatible runtime. Keep configuration and usage unchanged. Hold automatic reactivation of the rolled-back version until explicit prepare or a newer release.
 
-There are two update layers:
+The initial runtime is version 1.4.0. To adopt this mechanism, older users still need one cold setup. Repeating setup on an already current version does not reinstall or enable disabled routing.
 
-- **Plugin files:** A workspace admin can import the GitHub marketplace from `https://github.com/julian-ko/FPR-Nexus`. New workspace marketplaces have daily sync enabled. Local ZIP copies have no automatic remote source.
-- **Nexus runtime:** This separate local program still needs the setup step above. Plugin sync alone does not upgrade it. This release does not install a silent updater or write configuration while clients are running.
+| Change | Codex exit needed? |
+| --- | --- |
+| Compatible program fixes, statistics or export changes | No; later calls use the new runtime |
+| Compatible runtime rollback | No |
+| First setup or migration from App/Shell/pre-1.4.0 | Once |
+| Native model/agent settings, incompatible runtime/data changes | Maintenance setup; client-exit checks remain |
+| Configuration or full backup restore | Yes, through the existing recovery flow |
+| Host plugin registration, hooks or permissions | Depends on the host refresh/trust flow; not guaranteed live |
 
-A future opt-in updater could prepare files in the background and apply them after clients exit. It would still need version checks, backups and recovery. This is not implemented in 1.3.0.
+Automatic updates do not change model defaults or overwrite user choices. A candidate that fails validation does not replace the active version. Conflicting ownership, altered files and pending configuration recovery stop activation with a reason. Repeated attempts reuse verified staged files. Old releases are retained for running processes and recovery; this uses disk space.
 
-The public `releases/policy.json` endpoint carries version metadata only. No usage is uploaded and no server-provided command is run. Required updates limit Nexus activation; they do not block direct Codex use, review, disable or recovery.
+A workspace admin can import the GitHub marketplace from `https://github.com/julian-ko/FPR-Nexus`; new workspace marketplaces have daily sync enabled. A local ZIP has no remote update source. Nexus activates packages already delivered by the host; marketplace timing and permissions remain under host control.
+
+The public `releases/policy.json` endpoint carries version metadata only. Required updates limit Nexus activation, not direct Codex use, review, disable or recovery. A cold setup still verifies backups before configuration writes. Ordinary live updates create no full Codex backup because they leave Codex configuration and history untouched.
 
 Official references: [Workspace marketplace sync](https://learn.chatgpt.com/docs/enterprise/plugin-management), [Local plugin updates](https://developers.openai.com/plugins/build/plugins), [Pricing](https://learn.chatgpt.com/docs/pricing).

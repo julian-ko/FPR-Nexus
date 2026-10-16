@@ -22,7 +22,8 @@ if [[ "${1:-}" == "setup" ]]; then
   exec "$installer_python" -I "$plugin_directory/scripts/setup.py" "$@"
 fi
 [[ -x "$plugin_runtime/tvlk-ai-router" ]] || { echo 'Setup is required. Invoke tvlk-ai-router setup first.' >&2; exit 4; }
-[[ "$("$plugin_runtime/tvlk-ai-router" --version)" == 'FPR Nexus 1.3.0' ]] || { echo 'The cached plugin and installed runtime versions differ. Run setup to update the runtime. The durable recovery command remains available.' >&2; exit 4; }
+[[ -f "$plugin_runtime/active.json" ]] || { echo 'The cached plugin and installed runtime versions differ. Run setup once to enable live updates. The durable recovery command remains available.' >&2; exit 4; }
+"$plugin_runtime/.venv/bin/python" -I "$plugin_directory/scripts/runtime.py" >/dev/null || echo 'The update needs attention; continuing with the verified installed runtime. Use update prepare for details.' >&2
 [[ $# -gt 0 ]] || set -- help
 case "$1" in
   config)

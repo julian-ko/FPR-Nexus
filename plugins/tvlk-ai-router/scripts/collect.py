@@ -8,10 +8,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 runtime = Path.home() / ".local/share/tvlk-ai-router-plugin/runtime"
-sys.path.insert(0, str(runtime / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from runtime import selected_source
 
 
 def main():
+    sys.path.insert(0, str(selected_source(runtime)))
     from tvlk_ai_router.history import connect, collect
     from tvlk_ai_router.manager import Manager
     state_path = Path.home() / ".local/share/tvlk-ai-router/state.json"

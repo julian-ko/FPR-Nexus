@@ -31,6 +31,7 @@ Filter usage    tvlk-ai-router review all --scope nexus --group-by task
 Date range      tvlk-ai-router review --from 2026-10-01 --to 2026-10-15 --group-by date
 Check updates   tvlk-ai-router update check  (plugin chat launcher)
 Prepare update  tvlk-ai-router update prepare  (refresh plugin first)
+Undo update     tvlk-ai-router update rollback  (compatible runtime only)
 
 Every review saves JSON and Markdown tables in ~/.local/share/fpr-nexus-history/exports/.
 Use review --json for schema 1.0.0 output. Dates are UTC; reasoning effort is included.
@@ -196,7 +197,11 @@ def main(argv=None):
             if args.command == "shell-install":
                 if not os.environ.get("TVLK_ROUTER_SHELL_ROOT"):
                     raise RouterError("Use the isolated Shell installer", 4)
-                action = "install" if not m.state else "apply" if m.state["status"] == "enabled" else "enable"
+                if m.state and m.state.get("migration_resume_enabled"):
+                    return m.change("enable", args.config)
+                if m.state and m.state["status"] != "enabled":
+                    return {"status": m.state["status"], "message": "Runtime updated; routing remains " + m.state["status"]}
+                action = "install" if not m.state else "apply"
                 return m.change(action, args.config)
             if args.command == "restore":
                 return m.restore(args.backup_id, args.scope, args.dry_run)

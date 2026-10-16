@@ -14,6 +14,7 @@ Resolve the plugin root from this loaded skill's absolute path: it is two direct
 | configuration | `show` |
 | validate / export configuration | `config validate` / `config example` |
 | status | `status` |
+| runtime rollback | `update rollback` |
 | usage | `review` / `review 30d` / `review since-install` |
 | Nexus usage by task | `review all --scope nexus --group-by task` |
 | usage by date / model | `review 30d --group-by date` / `review 30d --group-by model` |
@@ -47,7 +48,9 @@ No local analysis, largest-contributor explanations or recommendations. No uploa
 
 Trusted routing hooks provide an internal `record-route` command for new work. Use its supplied session identity and transcript, with fixed category/mode/reason labels; never invent IDs or save prompts. Recording failures leave attribution unknown and must not block the user's task. Do not backfill historical route choices from guesses. Records and usage remain local and survive plugin removal.
 
-Version checks fetch only the public version policy, with no usage upload. `update prepare` opens setup only when the loaded plugin package is current. If the package is old, use the host's supported plugin refresh flow, start a new chat to load the updated skill, then retry. Do not edit cached plugin files or trust settings to bypass the check. A required update limits Nexus routing guidance and apply/enable operations; it cannot block direct Codex use. Keep help, review, disable and recovery available. Never claim a setup window waiting for client exit has completed.
+Version checks fetch only public metadata; no usage is uploaded. After one cold setup on 1.4.0+, compatible host-delivered packages activate automatically on the next command or root routing hook. Existing processes keep their pinned source. Updates preserve model choices, enabled/disabled/restored state, backups and usage. The launcher validates ownership, integrity, dependencies, configuration output and data contracts before switching. A failed candidate leaves the previous activation in place. Never delete a version directory while work may still use it.
+
+`update check` shows the loaded plugin package, active runtime and rollback hold. `update prepare` explicitly retries a live update, or opens cold setup if migration is required. `update rollback` selects the previous compatible runtime and holds automatic reactivation of the rolled-back version; explicit prepare or a newer release may update again. It does not roll back configuration or usage data. First installs, pre-1.4.0 installs and old App/Shell migration still require one cold setup. Native configuration changes and backup restore retain the existing client-exit checks. Do not describe workspace package refresh as completed runtime activation. Do not edit cached files or trust settings. A required policy limits Nexus guidance/apply/enable, not direct Codex use or recovery. Host plugin registration changes may still require refresh, a new session or restart.
 
 Automatic routing is injected by enabled plugin hooks only after successful setup. Native subagents receive no further routing context. Disabling/removing the plugin stops new hook calls; it does not undo installed model/agent configuration or instructions already in an existing chat. For recovery without the plugin, invoke the durable local program under `~/.local/share/tvlk-ai-router-plugin/runtime/tvlk-ai-router` and stage a restore request, then use its returned manage.sh command.
 

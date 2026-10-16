@@ -28,7 +28,7 @@ class FailedShellTests(unittest.TestCase):
         self.shell.mkdir(parents=True)
         (self.shell / "shell-installation.json").write_text(json.dumps({"runtime": str(self.shell), "distribution": "shell"}))
         for name in ("runner.py", "manage.sh", "tvlk-ai-router"):
-            source = (PACKAGE / "scripts" / name).read_text()
+            source = (PACKAGE / "tests/fixtures/legacy-runner.py").read_text() if name == "runner.py" else (PACKAGE / "scripts" / name).read_text()
             source = source.replace('os.environ["TVLK_ROUTER_BACKEND"] = "plugin"\n', '')
             (self.shell / name).write_text(source)
         (self.shell / ".venv/bin").mkdir(parents=True)

@@ -4,7 +4,7 @@
 
 | Command | Result |
 | --- | --- |
-| `tvlk-ai-router setup` | Detect the installed edition and open setup |
+| `tvlk-ai-router setup` | Update a compatible runtime, or open setup when maintenance is needed |
 | `tvlk-ai-router help` | Show commands |
 | `tvlk-ai-router status` | Installed state, models, conflicts and pending change |
 | `tvlk-ai-router config show` | Configuration path and models |
@@ -18,13 +18,14 @@
 | `tvlk-ai-router review 30d --group-by date` | Daily totals in UTC |
 | `tvlk-ai-router review --from 2026-10-01 --to 2026-10-15 --group-by model` | Model totals for an inclusive UTC date range |
 | `tvlk-ai-router update check` | Fetch the public version policy; no usage upload |
-| `tvlk-ai-router update prepare` | Open safe setup after refreshing the plugin in Codex |
+| `tvlk-ai-router update prepare` | Activate the host-delivered update, or open safe setup for migration |
+| `tvlk-ai-router update rollback` | Select the previous compatible runtime without changing settings |
 
 Review accepts 7d, 30d, since-install and all. It imports statistics into a durable local database without changing Codex settings. Other inspection commands run directly in chat. Apply, enable, disable and restore return a pending request and a recovery command. Quit the clients before executing it. Pending is not completed. Full-history restore requires an explicit request; normal restore covers configuration.
 
 ## Migration
 
-Setup checks App and Shell ownership before changing native settings. It verifies backups and manual changes, disables the old router, and moves the old program and duplicate Skill into a recovery archive. It then adopts the state and enables plugin routing. It does not run the old program.
+Setup checks App and Shell ownership before changing native settings. It verifies backups and manual changes, disables the old router, and moves the old program and duplicate Skill into a recovery archive. It then adopts the state and restores the previous routing status. Disabled and restored users stay in that state. It does not run the old program.
 
 Model choices, historical backups, backup IDs and the original install date stay in place. Recovery copies of the removed App, Shell runtime and Skill stay at `~/.local/share/tvlk-ai-router-plugin/legacy/`. They do not run automatically.
 
@@ -39,6 +40,8 @@ Historical App/Shell snapshots remain usable. Restoring one does not recreate th
 | `~/.config/tvlk-ai-router/router.toml` | Editable models and rules |
 | `~/.local/share/tvlk-ai-router/` | State, backups and pending changes |
 | `~/.local/share/tvlk-ai-router-plugin/runtime/` | Private environment and recovery program |
+| `~/.local/share/tvlk-ai-router-plugin/runtime/releases/` | Verified runtime versions, retained for running calls and rollback |
+| `~/.local/share/tvlk-ai-router-plugin/runtime/active.json` | Current and previous runtime pointers, plus automatic-update hold |
 | `~/.local/share/tvlk-ai-router-plugin/setup/` | Durable setup files |
 | `~/.local/share/tvlk-ai-router-plugin/legacy/` | Inactive old program and Skill |
 | `~/.local/share/fpr-nexus-history/usage.sqlite3` | Permanent collected statistics; kept after plugin removal |
@@ -49,24 +52,28 @@ Backups may use a custom path. Migration accepts the original CODEX_HOME with st
 
 ## Update
 
-Ask Codex to refresh the marketplace and plugin, then run setup:
+For the GitHub marketplace channel, ask Codex to refresh the marketplace and plugin:
 
 ```sh
 codex plugin marketplace upgrade tvlk-ai-router
 codex plugin add tvlk-ai-router@tvlk-ai-router
 ```
 
-Restart and review changed hooks. Setup preserves your model choices and original backup baseline.
+Review changed hooks when prompted. First installs and pre-1.4 runtimes need one setup with clients closed. Later compatible updates activate on the next Nexus command or routing hook without a Nexus-required restart. Host skill/hook refresh is separate; follow Codex's refresh prompt if needed.
 
-Since 1.1.0, `update check` reads `releases/policy.json` from this repository's main branch. `latest` is the available version; `minimum_supported` is the version required after `upgrade_deadline` (UTC). A null deadline applies the minimum immediately. Never raise the minimum before its package is available. The current policy advertises 1.3.0 and keeps 1.0.8 supported; no deadline has been imposed on teammates.
+Since 1.1.0, `update check` reads `releases/policy.json` from this repository's main branch. `latest` is the available version; `minimum_supported` is the version required after `upgrade_deadline` (UTC). A null deadline applies the minimum immediately. Never raise the minimum before its package is available. The current policy advertises 1.4.0 and keeps 1.0.8 supported; no deadline has been imposed on teammates.
 
 Background checks reuse a six-hour cache. A failed fetch keeps the last known policy and marks it stale; a client with no known policy reports unknown and continues. Explicit `update check` retries immediately. Old 1.0.8 installations have no policy reader and need one normal upgrade first.
 
-`update prepare` does not download or execute code named by the server. It checks the already-installed plugin package, then opens its existing setup window. If the host package is old, refresh it using Codex's supported flow first. Git marketplace refresh and workspace Plugin Creator releases are separate distribution channels. Copying a new runtime alone does not refresh host skills or hooks. Setup still waits for all clients, verifies backups and managed ownership, and restores the previous runtime source if installation fails.
+`update prepare` checks the host-delivered package. For a compatible update, Nexus copies source to an immutable version directory, checks integrity, dependencies, generated native settings and the runtime/data contract, then atomically switches the active pointer. Running calls keep their original directory. Failed validation leaves the active version unchanged. Installation and configuration locks prevent overlapping writes; pending configuration recovery blocks activation. Settings, install date, baseline, routing state and usage exports are not rewritten by a live update.
+
+`update rollback` checks and selects the previous compatible runtime. The rejected version is held back from automatic reactivation until explicit `update prepare` or a newer package arrives. Versions are retained and use disk space; there is no automatic pruning. If integrity is broken, use recovery rather than deleting state. Cold setup still verifies backups and waits for clients before configuration writes. Incompatible runtime/dependency/data contracts use this maintenance flow; new schema migrations require their own implementation and tests.
+
+Release authors must increment the relevant `runtime.json` contract when launcher, native configuration, history schema or dependency compatibility changes. Compatible releases must continue to work with the installed stable launcher. An ordinary live update does not replace that launcher or its Python environment. Git marketplace and Plugin Creator are separate delivery channels. No server-selected code is downloaded or executed.
 
 A required policy suppresses Nexus routing guidance and blocks install/apply/enable through the managed runtime. Review, help, disable and restore remain available. It does not revoke native model settings, erase old chat instructions, prevent direct Codex use, or stop a user from disabling this personal plugin. Company-wide mandatory enforcement requires managed devices/services.
 
-Workspace administrators can import this repository under Admin > Plugins > Import marketplace; new marketplaces sync daily. Use a branch for future updates, not a fixed commit. This synchronizes plugin files only. The separate runtime still needs the normal setup flow. No silent runtime updater is installed. See [official marketplace sync](https://learn.chatgpt.com/docs/enterprise/plugin-management).
+Workspace administrators can import this repository under Admin > Plugins > Import marketplace; new marketplaces sync daily. Use a branch for future updates, not a fixed commit. Nexus checks the delivered package when called; there is no polling daemon or code downloader. A ZIP needs a newer package supplied manually. See [official marketplace sync](https://learn.chatgpt.com/docs/enterprise/plugin-management).
 
 ## Usage and estimates
 

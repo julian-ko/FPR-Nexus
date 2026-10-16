@@ -87,6 +87,16 @@ def main():
     try:
         if args.install:
             return run_install(Path(__file__).resolve().parents[1])
+        root = Path.home() / ".local/share/tvlk-ai-router-plugin/runtime"
+        if (root / "active.json").exists():
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from runtime import sync
+            result = sync(Path(__file__).resolve().parents[1], root, automatic=False)
+            print(json.dumps(result))
+            if result["status"] in ("updated", "current"):
+                return 0
+            if result["status"] != "maintenance_required":
+                return 4
         command = prepare(Path(__file__).resolve().parents[1], sys.executable)
         if args.open:
             subprocess.run(["/usr/bin/open", "-a", "Terminal", str(command)], check=True)

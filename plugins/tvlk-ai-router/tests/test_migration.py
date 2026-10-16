@@ -113,6 +113,33 @@ class MigrationTests(unittest.TestCase):
         before = inventory([self.f.data, self.f.cfg, self.f.home])
         self.migrate()
         self.assertEqual(inventory([self.f.data, self.f.cfg, self.f.home]), before)
+
+    def cli_migration(self, status):
+        from tvlk_ai_router.cli import main
+        baseline, original = self.old("shell", disabled=status == "disabled")
+        if status == "restored":
+            with patch.dict(os.environ, {"TVLK_ROUTER_BACKEND": "shell", "TVLK_ROUTER_SHELL_ROOT": str(locations()["shell-runtime"])}):
+                self.f.manager().restore(baseline)
+        arguments = ["--codex-home", str(self.f.home), "--config-dir", str(self.f.cfg),
+                     "--data-dir", str(self.f.data), "--agents-home", str(self.f.shared), "shell-install"]
+        with patch("tvlk_ai_router.cli.quiet_check"):
+            self.assertEqual(main(arguments), 0)
+            self.assertEqual(main(arguments), 0)
+        m = self.f.manager()
+        self.assertEqual(m.state["status"], status)
+        self.assertEqual(m.state["baseline"], baseline)
+        self.assertEqual(m.state["installed_at"], original["installed_at"])
+        self.assertNotIn("migration_resume_enabled", m.state)
+        self.assertEqual(m.drift(), [])
+
+    def test_cli_migration_resumes_enabled_router(self):
+        self.cli_migration("enabled")
+
+    def test_cli_migration_keeps_disabled_router(self):
+        self.cli_migration("disabled")
+
+    def test_cli_migration_keeps_restored_router(self):
+        self.cli_migration("restored")
         self.f.manager().change("enable")
 
     def test_edited_skill_stops_before_disabling(self):

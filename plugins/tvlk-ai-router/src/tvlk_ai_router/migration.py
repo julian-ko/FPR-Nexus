@@ -156,6 +156,8 @@ def migrate(runtime):
                 raise RouterError("A legacy file disappeared during migration", 4)
         # Adoption is last: reruns finish missing moves before enabling plugin ownership.
         next_state = dict(m.state, installation_backend="plugin", shell_runtime=str(runtime), management_hashes={})
+        if journal["previous_state"]["status"] == "enabled":
+            next_state["migration_resume_enabled"] = True
         atomic(state_path, json_bytes(next_state))
         journal["phase"] = "complete"
         atomic(journal_path, json_bytes(journal))

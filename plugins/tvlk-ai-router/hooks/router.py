@@ -7,7 +7,7 @@ import shlex
 from pathlib import Path
 
 
-def context(payload, runtime, version="1.3.0"):
+def context(payload, runtime, version=None):
     event = payload.get("hook_event_name")
     if event not in ("SessionStart", "UserPromptSubmit"):
         return None
@@ -15,11 +15,16 @@ def context(payload, runtime, version="1.3.0"):
         return None
     os.environ["TVLK_ROUTER_SHELL_ROOT"] = str(runtime)
     os.environ["TVLK_ROUTER_BACKEND"] = "plugin"
-    sys.path.insert(0, str(runtime / "src"))
+    source = runtime / "src"
+    if (runtime / "active.json").exists():
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        from runtime import selected_source
+        source = selected_source(runtime)
+    sys.path.insert(0, str(source))
     from tvlk_ai_router import __version__
     from tvlk_ai_router.manager import Manager
     from tvlk_ai_router.config import digest, routing_block
-    if __version__ != version:
+    if version is not None and __version__ != version:
         return None
     data = Path.home() / ".local/share/tvlk-ai-router/state.json"
     if not data.is_file() or data.is_symlink():
@@ -71,6 +76,13 @@ def main():
         payload = json.load(sys.stdin)
         runtime = Path.home() / ".local/share/tvlk-ai-router-plugin/runtime"
         event = payload.get("hook_event_name")
+        if event in ("SessionStart", "UserPromptSubmit") and (runtime / "active.json").exists():
+            try:
+                sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+                from runtime import sync
+                sync(Path(__file__).resolve().parents[1], runtime)
+            except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+                pass  # A failed update must not replace the verified installed release.
         if event in ("SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"):
             try:
                 subprocess.Popen([str(runtime / ".venv/bin/python"), "-I", str(Path(__file__).resolve().parents[1] / "scripts/collect.py"), *(["--final"] if event in ("Stop", "SessionEnd") else [])],
