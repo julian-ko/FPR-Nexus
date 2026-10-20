@@ -209,9 +209,15 @@ def snapshot(store, roots, reason, state, home):
     blobs.chmod(0o500)
     (partial / "manifest.json").chmod(0o400)
     (partial / "COMPLETE").chmod(0o400)
-    partial.chmod(0o500)
     destination = store / ident
-    os.rename(partial, destination)
+    try:
+        # Keep the staging directory writable until its final name is in place.
+        os.rename(partial, destination)
+    except PermissionError as exc:
+        raise RouterError("Backup publication was denied by the filesystem: " + str(partial) + " -> " + str(destination)
+                          + ". The unfinished backup is preserved and configuration was not written. "
+                          + "Check directory ownership, ACLs and device security policy before retrying setup.", 4) from exc
+    destination.chmod(0o500)
     load_snapshot(store, ident, verify=True, progress_stage="backup_verification")
     return manifest
 

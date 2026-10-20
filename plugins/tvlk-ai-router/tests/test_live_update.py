@@ -34,7 +34,8 @@ class LiveUpdateTests(unittest.TestCase):
         self.initial = versions.active(self.root)["current"]["version"]
         self.package = self.f.fixture.root / "candidate"
         shutil.copytree(PACKAGE, self.package, ignore=shutil.ignore_patterns("tests", "__pycache__", "*.pyc"))
-        number = "1.4.1"
+        number = ".".join(map(str, (*versions.version(self.initial)[:2], versions.version(self.initial)[2] + 1)))
+        self.next_version = number
         manifest = json.loads((self.package / "plugin.json").read_text())
         manifest["version"] = number
         (self.package / "plugin.json").write_text(json.dumps(manifest))
@@ -134,7 +135,7 @@ class LiveUpdateTests(unittest.TestCase):
 
     def test_older_plugin_does_not_downgrade_runtime(self):
         versions.sync(self.package, self.root)
-        self.assertEqual(versions.sync(PACKAGE, self.root)["version"], "1.4.1")
+        self.assertEqual(versions.sync(PACKAGE, self.root)["version"], self.next_version)
 
     def test_chat_entry_activates_update_and_setup_needs_no_window(self):
         for name in ("runner.py", "runtime.py", "tvlk-ai-router"):
@@ -145,7 +146,7 @@ class LiveUpdateTests(unittest.TestCase):
                                 capture_output=True, text=True, env=env, timeout=30)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("update rollback", result.stdout)
-        self.assertEqual(versions.active(self.root)["current"]["version"], "1.4.1")
+        self.assertEqual(versions.active(self.root)["current"]["version"], self.next_version)
         result = subprocess.run([sys.executable, "-I", str(self.package / "scripts/setup.py"), "--open"],
                                 capture_output=True, text=True, env=env, timeout=30)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -204,7 +205,7 @@ print(later, flush=True)
             self.assertEqual(process.returncode, 0, error)
             self.assertEqual(output.strip(), self.initial)
             new = subprocess.run(command, input="\n", capture_output=True, text=True, check=True, timeout=15)
-            self.assertEqual(new.stdout.splitlines(), ["1.4.1", "1.4.1"])
+            self.assertEqual(new.stdout.splitlines(), [self.next_version, self.next_version])
         finally:
             if process.poll() is None:
                 process.kill()

@@ -1,4 +1,6 @@
-# FPR Nexus 1.4.0
+# FPR Nexus 1.4.1
+
+If setup failed when renaming a `.partial` backup, refresh to 1.4.1 and start a new setup window. This release keeps the staging directory writable until the rename finishes, then makes the finished backup read-only. Old setup windows still use their copied version. Existing backups and unfinished copies stay in place. If access is still denied, the target machine's directory permissions or security policy need review; this update does not bypass them.
 
 ## What
 

@@ -61,7 +61,7 @@ codex plugin add tvlk-ai-router@tvlk-ai-router
 
 Review changed hooks when prompted. First installs and pre-1.4 runtimes need one setup with clients closed. Later compatible updates activate on the next Nexus command or routing hook without a Nexus-required restart. Host skill/hook refresh is separate; follow Codex's refresh prompt if needed.
 
-Since 1.1.0, `update check` reads `releases/policy.json` from this repository's main branch. `latest` is the available version; `minimum_supported` is the version required after `upgrade_deadline` (UTC). A null deadline applies the minimum immediately. Never raise the minimum before its package is available. The current policy advertises 1.4.0 and keeps 1.0.8 supported; no deadline has been imposed on teammates.
+Since 1.1.0, `update check` reads `releases/policy.json` from this repository's main branch. `latest` is the available version; `minimum_supported` is the version required after `upgrade_deadline` (UTC). A null deadline applies the minimum immediately. Never raise the minimum before its package is available. The current policy advertises 1.4.1 and keeps 1.0.8 supported; no deadline has been imposed on teammates.
 
 Background checks reuse a six-hour cache. A failed fetch keeps the last known policy and marks it stale; a client with no known policy reports unknown and continues. Explicit `update check` retries immediately. Old 1.0.8 installations have no policy reader and need one normal upgrade first.
 

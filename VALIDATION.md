@@ -1,8 +1,13 @@
 # Validation
 
-Version 1.4.0 · 2026-10-16 · macOS Apple Silicon · Python 3.12.14
+Version 1.4.1 · 2026-10-20 · macOS Apple Silicon · Python 3.12.14
 
 ## Verified
+
+- Final 1.4.1 regression: 177 automated tests passed on 2026-10-20, including fresh install, legacy migration, runtime updates, backup/recovery and usage exports.
+
+- 1.4.1 moves the final backup directory's read-only permission change after its rename. A simulated filesystem that rejects renaming a read-only directory reproduces the old ordering failure and accepts the corrected sequence. Finished directories remain 0500 and files remain 0400; snapshot verification still runs before configuration writes.
+- An injected rename denial preserves the unfinished copy and all original configuration, creates no installation state and reports a specific error. A later retry succeeds without modifying the retained partial copy. The teammate's actual ACLs and endpoint policy were not inspected; a simple read-only-directory rename succeeds on the development machine, so the screenshot alone does not prove the underlying permission cause.
 
 - Final 1.4.0 regression: 175 automated tests passed on 2026-10-16. Syntax and package checks are performed separately before release.
 

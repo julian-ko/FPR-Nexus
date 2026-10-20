@@ -134,6 +134,38 @@ class RouterTests(unittest.TestCase):
         self.assertIn("Only explicit /plan doc", (self.home / "AGENTS.md").read_text())
         self.assertEqual(m.show()["runtime"], "unverified")
 
+    def test_backup_publishes_before_sealing_directory(self):
+        real_rename = os.rename
+        def rename_writable(source, target):
+            source = Path(source)
+            if source.name.endswith(".partial") and not source.stat().st_mode & 0o200:
+                raise PermissionError(13, "Read-only source directory", str(source))
+            return real_rename(source, target)
+        with patch("tvlk_ai_router.storage.os.rename", side_effect=rename_writable):
+            result = self.install()
+        backup = self.backups / result["backup_id"]
+        self.assertEqual(backup.stat().st_mode & 0o777, 0o500)
+        self.assertEqual((backup / "files").stat().st_mode & 0o777, 0o500)
+        for path in backup.rglob("*"):
+            if path.is_file():
+                self.assertEqual(path.stat().st_mode & 0o777, 0o400)
+        load_snapshot(self.backups, result["backup_id"], verify=True)
+
+    def test_backup_rename_denied_preserves_partial_and_configuration(self):
+        original = inventory([self.home, self.cfg, self.shared])
+        with patch("tvlk_ai_router.storage.os.rename", side_effect=PermissionError(13, "Permission denied")):
+            with self.assertRaisesRegex(RouterError, "unfinished backup is preserved"):
+                self.install()
+        self.assertEqual(inventory([self.home, self.cfg, self.shared]), original)
+        self.assertFalse(self.manager().state_file.exists())
+        partials = list(self.backups.glob("*.partial"))
+        self.assertEqual(len(partials), 1)
+        retained = inventory(partials)
+        self.assertFalse(any(item["verified"] for item in self.manager().backups()))
+        result = self.install()
+        self.assertEqual(inventory(partials), retained)
+        load_snapshot(self.backups, result["backup_id"], verify=True)
+
     def test_repeat_operations_are_idempotent(self):
         self.install()
         n = len(self.manager().backups())

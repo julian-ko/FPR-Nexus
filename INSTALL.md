@@ -19,3 +19,5 @@ After this one-time setup, compatible feature updates activate on the next Nexus
 After a failed older setup, update the plugin and start a new **Set up** window. An old setup window or command file still runs its old copy. New Codex folders are backed up and preserved automatically; no manual classification is needed.
 
 [Commands and recovery](OPERATIONS.md)
+
+If setup reports permission denied when renaming a `.partial` backup, refresh to 1.4.1 and start a new **Set up** window. Keep existing backups. If it still fails, share the full error so directory ownership, ACLs and device policy can be checked.
