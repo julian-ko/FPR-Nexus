@@ -20,4 +20,4 @@ After a failed older setup, update the plugin and start a new **Set up** window.
 
 [Commands and recovery](OPERATIONS.md)
 
-If setup reports permission denied when renaming a `.partial` backup, refresh to 1.4.1 and start a new **Set up** window. Keep existing backups. If it still fails, share the full error so directory ownership, ACLs and device policy can be checked.
+If setup reports permission denied when renaming a `.partial` backup, or the next attempt reports router data without ownership, refresh to 1.4.2 and start a new **Set up** window. Verified copies from a failed first setup are kept and setup can retry. Do not delete backup or state files. Unverified leftovers, installed configuration and pending transactions still require recovery review.

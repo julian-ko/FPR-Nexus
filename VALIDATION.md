@@ -1,8 +1,13 @@
 # Validation
 
-Version 1.4.1 · 2026-10-20 · macOS Apple Silicon · Python 3.12.14
+Version 1.4.2 · 2026-10-20 · macOS Apple Silicon · Python 3.12.14
 
 ## Verified
+
+- Final 1.4.2 regression: 186 automated tests passed on 2026-10-20. Python, Bash and JSON syntax checks passed. The previous 1.4.1 preflight was also tested against the new failed-backup fixture and reproduced the reported ownership rejection.
+
+- 1.4.2 recognizes complete, hash-verified baseline copies left by failed first plugin setup. Recognition is read-only and requires the exact plugin runtime marker, no installed source/activation, no saved router configuration/native markers and no unknown data or transaction files. Changed blobs, symlinks, foreign Codex Home, missing completion markers and non-baseline snapshots are rejected.
+- An isolated installer test creates the private Python environment, injects the reported backup rename denial twice (including the old 0500 staging directory), then retries successfully. The same interpreter is reused, both partial copies remain byte- and mode-identical, configuration stays unchanged during failures, and successful setup creates a new verified baseline and active runtime. Repeated setup also passes. Only the client-exit gate and the injected filesystem denial are mocked in the CLI path.
 
 - Final 1.4.1 regression: 177 automated tests passed on 2026-10-20, including fresh install, legacy migration, runtime updates, backup/recovery and usage exports.
 

@@ -168,6 +168,54 @@ class ShellTests(unittest.TestCase):
             for name in names:
                 self.assertEqual((home / ".codex" / name / "runtime.bin").read_bytes(), b"runtime data")
 
+    def test_actual_failed_backup_bootstrap_can_retry_without_deleting_copies(self):
+        import shutil
+        from tvlk_ai_router.storage import inventory
+        home = self.fixture.root / "backup retry user"
+        home.mkdir()
+        shutil.copytree(self.fixture.home, home / ".codex")
+        data = home / ".local/share/tvlk-ai-router"
+        runtime = home / ".local/share/tvlk-ai-router-plugin/runtime"
+        config = home / "input.toml"
+        config.write_text(self.fixture.input.read_text().replace(str(self.fixture.backups), str(data / "backups")))
+        real_run = subprocess.run
+        def run(args, **kwargs):
+            if "shell-install" in args:
+                with patch.dict(os.environ, {"TVLK_ROUTER_SHELL_ROOT": str(runtime), "TVLK_ROUTER_BACKEND": "plugin"}), patch("tvlk_ai_router.cli.quiet_check"):
+                    code = cli_main(args[args.index("shell-install"):])
+                if code:
+                    raise subprocess.CalledProcessError(code, args)
+                return subprocess.CompletedProcess(args, 0)
+            return real_run(args, **kwargs)
+        real_rename = os.rename
+        def deny_backup(source, target):
+            if str(source).endswith(".partial"):
+                Path(source).chmod(0o500)
+                raise PermissionError(13, "Permission denied", str(source))
+            return real_rename(source, target)
+        with patch("pathlib.Path.home", return_value=home), patch.dict(os.environ, {"HOME": str(home), "CODEX_HOME": str(home / ".codex")}), patch.object(installer.subprocess, "run", side_effect=run), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            before = (home / ".codex/config.toml").read_bytes()
+            for attempt in range(2):
+                with patch("tvlk_ai_router.storage.os.rename", side_effect=deny_backup):
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        installer.install(PACKAGE, config)
+                self.assertFalse((data / "state.json").exists())
+                self.assertFalse((runtime / "src").exists())
+                self.assertEqual((home / ".codex/config.toml").read_bytes(), before)
+            partials = list((data / "backups").glob("*.partial"))
+            self.assertEqual(len(partials), 2)
+            retained = inventory(partials)
+            interpreter = (runtime / ".venv/bin/python").stat().st_ino
+            installer.install(PACKAGE, config)
+            self.assertEqual(inventory(partials), retained)
+            self.assertEqual((runtime / ".venv/bin/python").stat().st_ino, interpreter)
+            state = json.loads((data / "state.json").read_text())
+            self.assertEqual(state["status"], "enabled")
+            self.assertTrue((data / "backups" / state["baseline"] / "COMPLETE").exists())
+            self.assertTrue((runtime / "active.json").exists())
+            installer.install(PACKAGE)
+            self.assertEqual(inventory(partials), retained)
+
     def test_retry_does_not_allow_unowned_backups_or_transactions(self):
         home = self.fixture.root / "retry guard"
         root = home / ".local/share/tvlk-ai-router-plugin/runtime"

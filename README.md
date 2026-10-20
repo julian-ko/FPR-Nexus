@@ -1,6 +1,6 @@
 # FPR Nexus
 
-Version 1.4.1 · Codex plugin · macOS
+Version 1.4.2 · Codex plugin · macOS
 
 Formerly TVLK-OpenAI-Router. Existing installations keep the same plugin identity, `tvlk-ai-router` commands, settings and backups.
 

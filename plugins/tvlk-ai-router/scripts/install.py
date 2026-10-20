@@ -16,6 +16,7 @@ import runtime as runtime_versions
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from tvlk_ai_router.failed_shell import recognized_failed_shell
+from tvlk_ai_router.failed_plugin import recognized_failed_plugin
 
 
 def preflight(root):
@@ -28,6 +29,8 @@ def preflight(root):
     if not state and state_path.parent.exists():
         remaining = list(state_path.parent.iterdir())
         safe_retry = (owned or failed_shell) and all(p.name == "lock" and not p.is_symlink() and p.is_file() and p.stat().st_size == 0 for p in remaining)
+        if not safe_retry and owned:
+            safe_retry = recognized_failed_plugin(root)
         if remaining and not safe_retry:
             raise ValueError("Router data exists without plugin ownership. Stop before changing its backups or pending transactions.")
     legacy_paths = [user_home / "Applications/TVLK-OpenAI-Router.app", user_home / ".agents/skills/tvlk-ai-router", user_home / ".local/share/tvlk-ai-router-shell/runtime"]
